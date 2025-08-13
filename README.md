@@ -1,6 +1,6 @@
 # Orçamento de Impressão 3D - Uso Pessoal
 
-Ferramenta em HTML criada para meu uso pessoal, que calcula o custo de impressões 3D a partir de arquivos **.gcode** gerados no OrcaSlicer.  
+Ferramenta em HTML criada para meu uso pessoal, com ajuda de I.A., que calcula o custo de impressões 3D a partir de arquivos **.gcode** gerados no OrcaSlicer.  
 O sistema lê automaticamente informações importantes e gera uma mensagem pronta para envio no WhatsApp.
 
 ## 🔹 Informações extraídas automaticamente do G-code
