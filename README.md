@@ -35,7 +35,7 @@ Para que a extração funcione corretamente:
 ## 🚀 Como usar
 1. Abra o arquivo `index.html` no navegador **ou** acesse a versão online no GitHub Pages:
    ```
-   https://SEU-USUARIO.github.io/NOME-DO-REPOSITORIO/
+   https://gfbarreto.github.io/orcamento-3d/
    ```
 2. Clique em **Importar G-code** e selecione o arquivo.
 3. Confira as informações extraídas automaticamente.
