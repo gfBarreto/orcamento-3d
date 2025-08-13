@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orçamento de Impressão 3D - gfbarreto 3D</title>
+<style>
+  :root{
+    --bg:#0B0F16; --panel:#0F1624; --surface:#121A2A; --line:#1E2A3A;
+    --text:#EAF1F7; --muted:#95A3B5; --accent:#22C55E; --blue:#3B82F6;
+    --btn:#1F2937; --chip:#0E1524; --chip-line:#253245;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:linear-gradient(180deg,#0A0F17 0%, #0B111B 60%, #0A1019 100%);
+    color:var(--text); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  }
+  header{
+    position:sticky; top:0; z-index:5; backdrop-filter: blur(8px);
+    background:rgba(12,18,30,.65); border-bottom:1px solid var(--line);
+  }
+  .wrap{ max-width:1200px; margin:0 auto; padding:14px 16px; }
+  h1{ margin:0; font-size:18px; letter-spacing:.3px; font-weight:700; display:flex; gap:10px; align-items:center }main{ max-width:1200px; margin:16px auto 48px; padding:0 16px }
+  .grid{ display:grid; gap:16px; grid-template-columns: 1.1fr .9fr }
+  @media (max-width: 1024px){ .grid{ grid-template-columns:1fr } }
+  .card{
+    background:linear-gradient(180deg,rgba(18,26,42,.92) 0%, rgba(16,22,36,.95) 100%);
+    border:1px solid var(--line); border-radius:16px; padding:14px;
+    box-shadow: 0 10px 30px rgba(3,10,20,.25);
+  }
+  .card h2{ font-size:14px; margin:0 0 10px; color:#CFE4FF; letter-spacing:.25px }
+  .section{ display:flex; flex-direction:column; gap:10px }
+  .row{ display:grid; gap:12px; grid-template-columns:1fr 1fr }
+  .row3{ display:grid; gap:12px; grid-template-columns:repeat(3,1fr) }
+  .flex{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+  .flex-nowrap{ display:flex; flex-wrap:nowrap; gap:6px; align-items:center }
+  label.small{ font-size:12px; color:var(--muted) }
+  .inp, textarea{
+    width:100%; background:var(--surface); border:1px solid var(--line);
+    color:var(--text); border-radius:12px; padding:10px 12px; font-size:14px;
+    outline:none; transition:border .15s ease, box-shadow .15s ease;
+  }
+  .inp:focus, textarea:focus{ border-color:#2C8FFF; box-shadow:0 0 0 3px rgba(59,130,246,.25) }
+  .btn{
+    background:var(--btn); border:1px solid var(--line); color:var(--text);
+    padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600;
+    transition:transform .05s ease, background .2s ease, border-color .2s ease;
+  }
+  .btn:hover{ transform:translateY(-1px); }
+  .btn.green{ background:#15803D; border-color:#1C9A4A }
+  .btn.blue{ background:#1D4ED8; border-color:#2E62E9 }
+  .btn.ghost{ background:transparent }
+  .pill{
+    padding:6px 10px; border-radius:999px; font-size:12px;
+    border:1px solid var(--chip-line); background:var(--chip); cursor:pointer;
+  }
+  .pill.y{ background:#F59E0B; color:#111; border-color:#EAB308 }
+  .pill.b{ background:#3B82F6; border-color:#60A5FA }
+  .pill.o{ background:#F97316; border-color:#FB923C }
+  .hint{ color:var(--muted); font-size:12px }
+  .kvs{ display:flex; align-items:center; gap:8px; flex-wrap:wrap }
+  .kv{ background:var(--chip); border:1px solid var(--chip-line); border-radius:10px; padding:6px 8px; font-size:12px; color:#C8D4E4 }
+  .divider{ height:1px; background:var(--line); margin:10px 0 }
+  /* Whats column */
+  #thumbTop img{ width:100%; max-width:760px; border-radius:14px; display:block; margin:0 auto }
+  /* Summary */
+  .sum{ display:grid; grid-template-columns:1fr auto; gap:8px; font-size:14px }
+  .sum .total{ font-size:18px; font-weight:800 }
+  Ppx; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Orçamento de Impressão 3D - gfbarreto 3D</h1>
+  </div>
+</header>
+
+<main>
+  <div class="grid">
+    <!-- ESQUERDA -->
+    <div class="section">
+      <div class="card">
+        <h2>Importar G-code</h2>
+        <div class="flex">
+          <input id="file" class="inp" type="file" accept=".gcode">
+          <button id="btnLoad" class="btn">Carregar</button>
+          <span id="status" class="hint"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Informações do serviço</h2>
+        <div class="row">
+          <div>
+            <label class="small" for="nomePeca">Nome da peça</label>
+            <input id="nomePeca" class="inp" placeholder="Ex.: Suporte GoPro">
+          </div>
+          <div>
+            <label class="small" for="nomeCliente">Cliente</label>
+            <input id="nomeCliente" class="inp" placeholder="Ex.: João Silva">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label class="small" for="tempo">Tempo (h:mm)</label>
+            <input id="tempo" class="inp" placeholder="1:10">
+          </div>
+          <div>
+            <label class="small" for="peso">Peso (g)</label>
+            <input id="peso" class="inp" placeholder="0.0">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label class="small">Filamento (único)</label>
+            <div class="kvs">
+              <label class="kv"><input type="radio" name="fil" id="f_PLA"> PLA</label>
+              <label class="kv"><input type="radio" name="fil" id="f_PETG"> PETG</label>
+              <label class="kv"><input type="radio" name="fil" id="f_ABS"> ABS</label>
+              <label class="kv"><input type="radio" name="fil" id="f_TPU"> TPU</label>
+              <label class="kv"><input type="radio" name="fil" id="f_TRITAN"> TRITAN</label>
+              <label class="kv"><input type="radio" name="fil" id="f_SILK"> SILK</label>
+            </div>
+          </div>
+          <div>
+            <label class="small" for="cor">Cor</label>
+            <input id="cor" class="inp" placeholder="Azul">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label class="small">Impressoras</label>
+            <div class="kvs">
+              <label class="kv"><input type="checkbox" id="p_goku"> Voron Goku</label>
+              <label class="kv"><input type="checkbox" id="p_bage"> Voron Bagé</label>
+              <label class="kv"><input type="checkbox" id="p_sp5"> SP5</label>
+              <label class="kv"><input type="checkbox" id="p_k1"> K1</label>
+            </div>
+          </div>
+          <div>
+            <label class="small" for="obs">Observações</label>
+            <input id="obs" class="inp" placeholder="Observações">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Custos e parâmetros</h2>
+        <div class="row">
+          <div>
+            <label class="small" for="custoKg">Custo do filamento (R$/kg)</label>
+            <input id="custoKg" class="inp" type="number" step="0.01" value="120" class="inp small">
+          </div>
+          <div>
+            <label class="small" for="kwh">R$/kWh</label>
+            <input id="kwh" class="inp" type="number" step="0.01" value="1.4" class="inp small">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label class="small" for="w">Consumo (W)</label>
+            <input id="w" class="inp" type="number" step="1" value="350" class="inp small">
+          </div>
+          <div>
+            <label class="small" for="margem">Margem (%)</label>
+            <div class="flex-nowrap">
+              <input id="margem" class="inp" type="number" value="100" style="max-width:120px" class="inp small">
+              <button class="pill y" data-m="100">100%</button>
+              <button class="pill b" data-m="500">500%</button>
+              <button class="pill o" data-m="1000">1000%</button>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label class="small" for="modPreco">R$/h modelagem</label>
+            <input id="modPreco" class="inp" type="number" step="0.01" class="inp small">
+          </div>
+          <div>
+            <label class="small" for="modTempo">Tempo modelagem (h:mm)</label>
+            <input id="modTempo" class="inp" placeholder="0:30" class="inp small" value="1:00">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Resumo</h2>
+        <div id="resumo" class="sum">
+          <div class="hint">Importe ou preencha os campos e clique Calcular.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="flex"><button id="btnCalc" class="btn blue">Calcular</button></div>
+      </div>
+    </div>
+
+    <!-- DIREITA -->
+    <div class="section">
+      <div class="card">
+        <h2>Miniatura</h2>
+        <div id="thumbTop"></div>
+      </div>
+
+      <div class="card">
+        <h2>Mensagem do WhatsApp</h2>
+        <textarea id="msg" class="inp" rows="16" placeholder="Prévia da mensagem..."></textarea>
+        <div class="row">
+          <div>
+            <label class="small" for="fone">Whats (só números, DDI 55 fixo)</label>
+            <input id="fone" class="inp" placeholder="DDD + número, ex.: 51999999999">
+          </div>
+          <div class="flex" style="align-items:flex-end; justify-content:flex-end">
+            <button id="btnZap" class="btn green">Enviar Whats</button>
+            <button id="btnCopyThumb" class="btn ghost">Copiar miniatura</button>
+            <a id="btnDownThumb" class="btn ghost" download="miniatura.png">Baixar miniatura</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const $ = (id)=>document.getElementById(id);
+let lastThumb = null;
+
+// utils
+const num = (v)=>{ const x=parseFloat(String(v).replace(',','.')); return isFinite(x)?x:0; };
+function parseHM(v){
+  if(!v) return 0;
+  const s = String(v).trim();
+  // hh:mm
+  let a = s.match(/^(\d+):(\d{1,2})$/);
+  if(a) return (+a[1]) + (+a[2])/60;
+  // 1h30m / 1h / 30m
+  a = s.match(/^(?:(\d+(?:[.,]\d+)?)\s*h)?\s*(?:(\d+)\s*m)?$/i);
+  if(a && (a[1] || a[2])) return (parseFloat((a[1]||'0').replace(',','.'))||0) + ((+a[2]||0)/60);
+  // 90m
+  a = s.match(/^(\d+)\s*m$/i);
+  if(a) return (+a[1])/60;
+  // decimal hours "1.5" or "1,5"
+  a = s.match(/^\d+(?:[.,]\d+)?$/);
+  if(a) return parseFloat(s.replace(',','.'))||0;
+  return 0;
+}
+const fmtBRL=(v)=>{try{return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}catch(_){return 'R$ '+(v||0).toFixed(2).replace('.',',')}};
+const horasTxt=(h)=>{const hh=Math.floor(h||0),mm=Math.round(((h||0)-hh)*60);return `${hh}:${String(mm).padStart(2,'0')}`};
+function mapPrinterLabel(txt){ const s=(txt||'').toLowerCase(); if(s.includes('goku')) return 'V.0 Goku'; if(/bag[eé]/.test(s)) return 'V.0 Bagé'; if(/sp-?5/.test(s)) return 'SP5'; if(s.includes('k1')) return 'K1'; return txt; }
+function reducedName(name){ if(!name) return ''; let b=String(name).replace(/\.[^.]+$/,''); const m=b.match(/^(.*?)[_\-\s]\d+h\d+m(\d+s)?/i); if(m) b=m[1]; return b.replace(/[_\-]+/g,' ').replace(/\s{2,}/g,' ').trim(); }
+
+
+// Extract tags from filename: filament, printer, color
+function parseFromFilename(filename){
+  const name = String(filename||'').toLowerCase();
+  const out = { fil:null, printer:[], color:null };
+
+  const filTags = [['pla','PLA'],['petg','PETG'],['abs','ABS'],['tpu','TPU'],['tritan','TRITAN'],['silk','SILK']];
+  for(const [kw,label] of filTags){
+    if(name.includes(kw)){ out.fil = label; break; }
+  }
+  if(name.includes('goku')) out.printer.push('goku');
+  if(name.match(/bag[eé]/)) out.printer.push('bage');
+  if(name.includes('sp5') || name.includes('sp-5')) out.printer.push('sp5');
+  if(name.includes('k1')) out.printer.push('k1');
+
+  const colorList = ['preto','branco','azul','vermelho','amarelo','verde','roxo','rosa','laranja','marrom','cinza','prata','dourado','transparente','natural','bege'];
+  let m = name.match(/(?:\[cor=([^\]]+)\])|(?:\bcor-([a-z0-9_]+))|(?:\bcolor-([a-z0-9_]+))/i);
+  if(m){
+    out.color = (m[1]||m[2]||m[3]||'').replace(/[_\-]+/g,' ').trim();
+  }else{
+    for(const c of colorList){
+      if(name.includes(c)){ out.color = c; break; }
+    }
+  }
+  if(out.color){
+    out.color = out.color.replace(/^(\w)/, (x)=>x.toUpperCase());
+  }
+  return out;
+}
+// G-code parse
+function parseG(text){
+  let weight=null, hours=null;
+
+  // peso: aceita "filament used [g]" ou "filament weight [g]" e variações
+  let m = text.match(/^\s*;\s*filament\s+(used|weight)\s*\[?g\]?\s*[:=]\s*([\d\.]+)/gmi);
+  if(m && m.length){
+    const v=m[m.length-1].match(/([\d\.]+)/);
+    if(v) weight=parseFloat(v[1]);
+  }
+
+  // tempo: Orca/Prusa "estimated printing time = ..." ou fallback TIME_ELAPSED
+  let t = text.match(/^\s*;\s*estimated printing time.*=\s*([^\r\n]+)/gmi);
+  if(t && t.length){
+    const val=t[t.length-1].split('=').pop().trim();
+    const mh=val.match(/(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/i);
+    if(mh) hours=(+mh[1]||0)+(+mh[2]||0)/60+(+mh[3]||0)/3600;
+  }
+  if(hours==null){
+    const te=[...text.matchAll(/^\s*;TIME_ELAPSED:\s*([\d\.]+)/gmi)];
+    if(te.length){ const s=parseFloat(te[te.length-1][1]); hours=s/3600; }
+  }
+
+  // miniatura: procurar TODAS e preferir 300x300; senão, maior disponível
+  const allThumbs = [...text.matchAll(/^\s*;\s*thumbnail begin\s+(\d+)x(\d+)\s+\d+\s*\n([\s\S]*?)^\s*;\s*thumbnail end/gmi)];
+  if(allThumbs.length){
+    const clean = (s)=> s.split(/\r?\n/).map(l=>l.replace(/^\s*;\s*/,'').trim()).join('');
+    // preferir 300x300
+    let pick = allThumbs.find(m => (+m[1]===300 && +m[2]===300));
+    if(!pick){
+      // fallback: maior área
+      pick = allThumbs.sort((a,b)=>(+b[1]*+b[2])-(+a[1]*+a[2]))[0];
+    }
+    const body = clean(pick[3]);
+    lastThumb='data:image/png;base64,'+body;
+    const img=new Image(); img.src=lastThumb;
+    const top=$('thumbTop'); if(top){ top.innerHTML=''; top.appendChild(img); }
+    const a=$('btnDownThumb'); if(a) a.href=lastThumb;
+    // expor dimensão escolhida
+    window.__thumbWH = `${pick[1]}x${pick[2]}`;
+  }
+  return {weight,hours};
+}
+
+// Calculadora + Whats
+function calcular(){
+  const peso=num($('peso').value);
+  const custoKg=num($('custoKg').value || 120); // padrão
+  const tempoH=parseHM($('tempo').value);
+  const kwh=num($('kwh').value);
+  const w=num($('w').value)||350;
+  const margem=num($('margem').value)||100;
+  const modPreco=num($('modPreco').value);
+  const modTempo=parseHM($('modTempo').value);
+
+  const material=(peso/1000)*custoKg;
+  const energia=((w/1000)*tempoH)*kwh;
+  const base=material+energia;
+  const comMarg=base*(1+margem/100);
+  const model=modPreco*modTempo;
+  const total=comMarg+model;
+
+  // resumo
+  const sum = $('resumo');
+  if(sum){
+    sum.innerHTML =
+      `<div>Material</div><div><b>${fmtBRL(material)}</b></div>`+
+      `<div>Energia</div><div><b>${fmtBRL(energia)}</b></div>`+
+      `<div>Base c/ margem (${margem}%)</div><div><b>${fmtBRL(comMarg)}</b></div>`+
+      `<div>Modelagem</div><div><b>${fmtBRL(model)}</b></div>`+
+      `<div class="divider" style="grid-column:1 / -1"></div>`+
+      `<div><b>Valor do serviço</b></div><div class="total">${fmtBRL(total)}</div>`;
+  }
+
+  // mensagem
+  const nomePeca=$('nomePeca').value.trim();
+  const cliente=$('nomeCliente').value.trim();
+  const sel=document.querySelector('input[name=fil]:checked');
+  const filSel=(sel? sel.id.replace('f_','') : '').toUpperCase();
+  const cor=$('cor').value.trim();
+  const imps=Array.from(document.querySelectorAll('#p_goku,#p_bage,#p_sp5,#p_k1'))
+      .filter(i=>i.checked).map(i=>mapPrinterLabel(i.nextSibling.textContent.trim()));
+  const obs=$('obs').value.trim();
+
+  const linhas=[];
+  linhas.push(`*Orçamento de Impressão 3D*`);
+  linhas.push(`*Valor do serviço:* ${fmtBRL(total)}`);
+  if (nomePeca) linhas.push(`*Peça:* ${nomePeca}`);
+  if (cliente) linhas.push(`*Cliente:* ${cliente}`);
+  if (filSel) linhas.push(`*Filamento:* ${filSel}${cor? ' - '+cor:''}`);
+  if (imps.length) linhas.push(`*Impressora:* ${imps.join(', ')}`);
+  if (tempoH>0){
+    const hh = Math.floor(tempoH||0);
+    const mm = Math.round(((tempoH||0)-hh)*60);
+    if(hh > 0){ linhas.push(`*Tempo:* ${hh}h ${mm}min (estimado)`); } else { linhas.push(`*Tempo:* ${mm}min (estimado)`); }
+  }
+  if (peso>0) linhas.push(`*Peso:* ${peso.toFixed(1)} g`);
+  // Sempre incluir modelagem
+  {
+    const mh = Math.floor(modTempo||0);
+    const mmh = Math.round(((modTempo||0)-mh)*60);
+    if(mh > 0){ linhas.push(`*Tempo de modelagem:* ${mh}h ${mmh}min`); } else { linhas.push(`*Tempo de modelagem:* ${mmh}min`); }
+    linhas.push(`*Valor modelagem:* ${fmtBRL(model)}`);
+  }
+  if (obs) linhas.push(`Obs.: ${obs}`);
+  linhas.push(`Agradecemos a preferência! 😊`);
+  linhas.push('');
+  linhas.push(`Siga nosso Instagram: https://www.instagram.com/gfbarreto3d/`);
+  const msgEl = $('msg'); if(msgEl) msgEl.value = linhas.join('\n');
+
+  return total;
+}
+
+// eventos
+$('btnCalc').addEventListener('click', calcular);
+document.querySelectorAll('[data-m]').forEach(b=> b.addEventListener('click', ()=>{ $('margem').value=b.getAttribute('data-m'); calcular(); }));
+$('btnZap').addEventListener('click', ()=>{
+  calcular();
+  const f = ($('fone').value||'').replace(/\D/g,'');
+  if(!f){ alert('Informe o Whats (apenas números)'); return; }
+  const msg = encodeURIComponent(($('msg').value||''));
+  window.open('https://wa.me/55'+f+'?text='+msg, '_blank');
+});
+$('btnCopyThumb').addEventListener('click', async ()=>{
+  try{
+    if(!lastThumb) throw 0;
+    const resp = await fetch(lastThumb); const blob = await resp.blob();
+    await navigator.clipboard.write([new ClipboardItem({[blob.type]: blob})]);
+    alert('Miniatura copiada! Cole no Whats.');
+  }catch(e){ alert('Miniatura indisponível. Baixe e anexe manualmente.'); }
+});
+
+// importar gcode
+function loadFile(){
+  const f = $('file').files && $('file').files[0];
+  if(!f){ alert('Selecione um .gcode'); return; }
+  if(!$('nomePeca').value) $('nomePeca').value = reducedName(f.name);
+  const r = new FileReader();
+  r.onload = ev => {
+    // Parse filename hints (filament, printer, color)
+    const meta = parseFromFilename(f.name);
+    if(meta.fil){
+      const el = document.getElementById('f_'+meta.fil.toUpperCase());
+      if(el){ el.checked = true; }
+    }
+    const mapping = {goku:'p_goku', bage:'p_bage', sp5:'p_sp5', k1:'p_k1'};
+    (meta.printer||[]).forEach(key=>{ const el=document.getElementById(mapping[key]); if(el) el.checked=true; });
+    if(meta.color && !$('cor').value){ $('cor').value = meta.color.charAt(0).toUpperCase()+meta.color.slice(1); }
+
+    const tx = String(ev.target.result||'');
+    const p = parseG(tx);
+    if(p.hours!=null) $('tempo').value = horasTxt(p.hours);
+    if(p.weight!=null) $('peso').value = p.weight.toFixed(1);
+    $('status').textContent = 'Importado.';
+    if(window.__thumbWH){ $('status').textContent += ` (Thumb ${window.__thumbWH})`; }
+    calcular(); // calcula automaticamente ao importar
+  };
+  r.onerror = ()=> $('status').textContent='Falha ao ler.';
+  r.readAsText(f);
+}
+$('btnLoad').addEventListener('click', loadFile);
+$('file').addEventListener('change', loadFile);
+
+// ao carregar a página: garante custoKg padrão se vazio
+document.addEventListener('DOMContentLoaded', ()=>{
+  const ck = $('custoKg');
+  if(ck && !ck.value) ck.value = 120;
+});
+</script>
+</body>
+</html>
