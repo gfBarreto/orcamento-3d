@@ -7,17 +7,17 @@ O sistema lê automaticamente informações importantes e gera uma mensagem pron
 ## 📸 Galeria de uso
 
 <p align="center">
-  <img src="Captura%20de%20Tela%202025-08-13%20às%2018.32.16.png" alt="Miniatura" width="400">
-  <img src="Captura%20de%20Tela%202025-08-13%20às%2018.32.30.png" alt="Informações do serviço" width="400">
+  <img src="Miniatura.png" alt="Miniatura" width="400">
+  <img src="ImportacaoDados.png" alt="Informações do serviço" width="400">
 </p>
 
 <p align="center">
-  <img src="Captura%20de%20Tela%202025-08-13%20às%2018.32.38.png" alt="Custos e parâmetros" width="400">
-  <img src="Captura%20de%20Tela%202025-08-13%20às%2018.32.45.png" alt="Resumo" width="400">
+  <img src="Custos.png" alt="Custos e parâmetros" width="400">
+  <img src="Resumo.png" alt="Resumo" width="400">
 </p>
 
 <p align="center">
-  <img src="Captura%20de%20Tela%202025-08-13%20às%2018.33.00.png" alt="Mensagem do WhatsApp" width="400">
+  <img src="Whats.png" alt="Mensagem do WhatsApp" width="400">
 </p>
 
 ## ⚙️ Configuração necessária no OrcaSlicer
