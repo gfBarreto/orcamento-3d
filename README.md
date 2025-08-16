@@ -35,7 +35,7 @@ O sistema lê automaticamente informações importantes e gera uma mensagem pron
 
 ## 🚀 Como usar
 1. Abra o arquivo `index.html` no navegador ou acesse a versão online no GitHub Pages.
-2. Clique em **Importar G-code** e selecione o arquivo.
+2. Clique em **Importar G-code** e selecione o arquivo de exemplo "PortaBrocas_3h55m_TwoTrees SP-5 Klipper 0.4 nozzle - Copia_TT PETG F3D PRETO_PETG.gcode".
 3. Confira as informações extraídas automaticamente.
 4. Clique em **Calcular** para gerar a mensagem do WhatsApp.
 5. Envie para o cliente.
