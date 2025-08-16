@@ -1,452 +1,1317 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Orçamento de Impressão 3D - gfbarreto 3D</title>
-<style>
-  :root{
-    --bg:#0B0F16; --panel:#0F1624; --surface:#121A2A; --line:#1E2A3A;
-    --text:#EAF1F7; --muted:#95A3B5; --accent:#22C55E; --blue:#3B82F6;
-    --btn:#1F2937; --chip:#0E1524; --chip-line:#253245;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0; background:linear-gradient(180deg,#0A0F17 0%, #0B111B 60%, #0A1019 100%);
-    color:var(--text); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-  }
-  header{
-    position:sticky; top:0; z-index:5; backdrop-filter: blur(8px);
-    background:rgba(12,18,30,.65); border-bottom:1px solid var(--line);
-  }
-  .wrap{ max-width:1200px; margin:0 auto; padding:14px 16px; }
-  h1{ margin:0; font-size:18px; letter-spacing:.3px; font-weight:700; display:flex; gap:10px; align-items:center }main{ max-width:1200px; margin:16px auto 48px; padding:0 16px }
-  .grid{ display:grid; gap:16px; grid-template-columns: 1.1fr .9fr }
-  @media (max-width: 1024px){ .grid{ grid-template-columns:1fr } }
-  .card{
-    background:linear-gradient(180deg,rgba(18,26,42,.92) 0%, rgba(16,22,36,.95) 100%);
-    border:1px solid var(--line); border-radius:16px; padding:14px;
-    box-shadow: 0 10px 30px rgba(3,10,20,.25);
-  }
-  .card h2{ font-size:14px; margin:0 0 10px; color:#CFE4FF; letter-spacing:.25px }
-  .section{ display:flex; flex-direction:column; gap:10px }
-  .row{ display:grid; gap:12px; grid-template-columns:1fr 1fr }
-  .row3{ display:grid; gap:12px; grid-template-columns:repeat(3,1fr) }
-  .flex{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
-  .flex-nowrap{ display:flex; flex-wrap:nowrap; gap:6px; align-items:center }
-  label.small{ font-size:12px; color:var(--muted) }
-  .inp, textarea{
-    width:100%; background:var(--surface); border:1px solid var(--line);
-    color:var(--text); border-radius:12px; padding:10px 12px; font-size:14px;
-    outline:none; transition:border .15s ease, box-shadow .15s ease;
-  }
-  .inp:focus, textarea:focus{ border-color:#2C8FFF; box-shadow:0 0 0 3px rgba(59,130,246,.25) }
-  .btn{
-    background:var(--btn); border:1px solid var(--line); color:var(--text);
-    padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600;
-    transition:transform .05s ease, background .2s ease, border-color .2s ease;
-  }
-  .btn:hover{ transform:translateY(-1px); }
-  .btn.green{ background:#15803D; border-color:#1C9A4A }
-  .btn.blue{ background:#1D4ED8; border-color:#2E62E9 }
-  .btn.ghost{ background:transparent }
-  .pill{
-    padding:6px 10px; border-radius:999px; font-size:12px;
-    border:1px solid var(--chip-line); background:var(--chip); cursor:pointer;
-  }
-  .pill.y{ background:#F59E0B; color:#111; border-color:#EAB308 }
-  .pill.b{ background:#3B82F6; border-color:#60A5FA }
-  .pill.o{ background:#F97316; border-color:#FB923C }
-  .hint{ color:var(--muted); font-size:12px }
-  .kvs{ display:flex; align-items:center; gap:8px; flex-wrap:wrap }
-  .kv{ background:var(--chip); border:1px solid var(--chip-line); border-radius:10px; padding:6px 8px; font-size:12px; color:#C8D4E4 }
-  .divider{ height:1px; background:var(--line); margin:10px 0 }
-  /* Whats column */
-  #thumbTop img{ width:100%; max-width:760px; border-radius:14px; display:block; margin:0 auto }
-  /* Summary */
-  .sum{ display:grid; grid-template-columns:1fr auto; gap:8px; font-size:14px }
-  .sum .total{ font-size:18px; font-weight:800 }
-  Ppx; }
-</style>
-</head>
-<body>
-<header>
-  <div class="wrap">
-    <h1>Orçamento de Impressão 3D - gfbarreto 3D</h1>
-  </div>
-</header>
+<script>
+function inlineRenderNow(){
+  try{
+    var $=function(id){return document.getElementById(id)};
+    var BRLfmt=function(x){ try{return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(x)||0);}catch(e){return 'R$ '+(Number(x)||0).toFixed(2);} };
+    var parseHM=function(s){ if(!s) return 0; s=String(s).trim(); var m=s.match(/^(\d+):(\d{1,2})$/); if(m) return (+m[1])+((+m[2])/60); m=s.match(/(?:(\d+(?:[.,]\d+)?)\s*h)?\s*(?:(\d+)\s*m(?:in)?)?/i); if(m&&(m[1]||m[2])) return (parseFloat((m[1]||'0').replace(',','.'))||0)+((+m[2]||0)/60); if(/^\d+(?:[.,]\d+)?$/.test(s)) return parseFloat(s.replace(',','.')); return 0; };
 
-<main>
-  <div class="grid">
-    <!-- ESQUERDA -->
-    <div class="section">
-      <div class="card">
-        <h2>Importar G-code</h2>
-        <div class="flex">
-          <input id="file" class="inp" type="file" accept=".gcode">
-          <button id="btnLoad" class="btn">Carregar</button>
-          <span id="status" class="hint"></span>
-        </div>
-      </div>
+    var nome=($('nomePeca')?.value||'').trim();
+    var cliente=($('nomeCliente')?.value||'').trim()||'Cliente';
+    var ftype=($('filamento')?.value||'').trim();
+    var cor=($('cor')?.value||'').trim();
+    var filamento = ftype + (cor?(' – '+cor):'');
+    var imp=($('impressora')?.value||'').trim();
+    var tempoTxt=($('tempo')?.value||'').trim();
+    var h=parseHM(tempoTxt);
+    var peso=parseFloat((($('peso')?.value||'')+'').replace(',','.'))||0;
+    var custoKg=parseFloat($('custoKg')?.value||0)||0;
+    var kwh=parseFloat($('kwh')?.value||0)||0;
+    var pot=parseFloat($('pot')?.value||0)||0;
+    var margem=parseFloat($('margem')?.value||0)||0;
+    var modH=parseHM($('modTempo')?.value||'0');
+    var modPreco=parseFloat($('modPreco')?.value||0)||0;
+    var modelagem=modH*modPreco;
+    var depr=parseFloat($('depr')?.value||0)||0;
 
-      <div class="card">
-        <h2>Informações do serviço</h2>
-        <div class="row">
-          <div>
-            <label class="small" for="nomePeca">Nome da peça</label>
-            <input id="nomePeca" class="inp" placeholder="Ex.: Suporte GoPro">
-          </div>
-          <div>
-            <label class="small" for="nomeCliente">Cliente</label>
-            <input id="nomeCliente" class="inp" placeholder="Ex.: João Silva">
-          </div>
-        </div>
-        <div class="row">
-          <div>
-            <label class="small" for="tempo">Tempo (h:mm)</label>
-            <input id="tempo" class="inp" placeholder="1:10">
-          </div>
-          <div>
-            <label class="small" for="peso">Peso (g)</label>
-            <input id="peso" class="inp" placeholder="0.0">
-          </div>
-        </div>
-        <div class="row">
-          <div>
-            <label class="small">Filamento (único)</label>
-            <div class="kvs">
-              <label class="kv"><input type="radio" name="fil" id="f_PLA"> PLA</label>
-              <label class="kv"><input type="radio" name="fil" id="f_PETG"> PETG</label>
-              <label class="kv"><input type="radio" name="fil" id="f_ABS"> ABS</label>
-              <label class="kv"><input type="radio" name="fil" id="f_TPU"> TPU</label>
-              <label class="kv"><input type="radio" name="fil" id="f_TRITAN"> TRITAN</label>
-              <label class="kv"><input type="radio" name="fil" id="f_SILK"> SILK</label>
-            </div>
-          </div>
-          <div>
-            <label class="small" for="cor">Cor</label>
-            <input id="cor" class="inp" placeholder="Azul">
-          </div>
-        </div>
-        <div class="row">
-          <div>
-            <label class="small">Impressoras</label>
-            <div class="kvs">
-              <label class="kv"><input type="checkbox" id="p_goku"> Voron Goku</label>
-              <label class="kv"><input type="checkbox" id="p_bage"> Voron Bagé</label>
-              <label class="kv"><input type="checkbox" id="p_sp5"> SP5</label>
-              <label class="kv"><input type="checkbox" id="p_k1"> K1</label>
-            </div>
-          </div>
-          <div>
-            <label class="small" for="obs">Observações</label>
-            <input id="obs" class="inp" placeholder="Observações">
-          </div>
-        </div>
-      </div>
+    if(imp){
+      var vida=parseFloat($('dep_vida_padrao')?.value||'2600')||2600;
+      var total=0, U=imp.toUpperCase();
+      if(/SP-?5|TWOTREES|TT\s*SP-?5/.test(U)){ total=(parseFloat($('dep_sp5_val')?.value||0)||0)+(parseFloat($('dep_sp5_up')?.value||0)||0); }
+      else if(/\bK1\b/.test(U)){ total=(parseFloat($('dep_k1_val')?.value||0)||0)+(parseFloat($('dep_k1_up')?.value||0)||0); }
+      else if(/BUMBLEBEE|BAGÉ|BAGE/.test(U)){ total=(parseFloat($('dep_v0bage_val')?.value||0)||0)+(parseFloat($('dep_v0bage_up')?.value||0)||0); }
+      else if(/GOKU|V(?:\.|)0|VORON\s*0/.test(U)){ total=(parseFloat($('dep_v0goku_val')?.value||0)||0)+(parseFloat($('dep_v0goku_up')?.value||0)||0); }
+      if(vida>0){ depr=total/vida; if($('depr')) $('depr').value=depr.toFixed(2); }
+    }
 
-      <div class="card">
-        <h2>Custos e parâmetros</h2>
-        <div class="row">
-          <div>
-            <label class="small" for="custoKg">Custo do filamento (R$/kg)</label>
-            <input id="custoKg" class="inp" type="number" step="0.01" value="120" class="inp small">
-          </div>
-          <div>
-            <label class="small" for="kwh">R$/kWh</label>
-            <input id="kwh" class="inp" type="number" step="0.01" value="1.4" class="inp small">
-          </div>
-        </div>
-        <div class="row">
-          <div>
-            <label class="small" for="w">Consumo (W)</label>
-            <input id="w" class="inp" type="number" step="1" value="350" class="inp small">
-          </div>
-          <div>
-            <label class="small" for="margem">Margem (%)</label>
-            <div class="flex-nowrap">
-              <input id="margem" class="inp" type="number" value="100" style="max-width:120px" class="inp small">
-              <button class="pill y" data-m="100">100%</button>
-              <button class="pill b" data-m="500">500%</button>
-              <button class="pill o" data-m="1000">1000%</button>
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div>
-            <label class="small" for="modPreco">R$/h modelagem</label>
-            <input id="modPreco" class="inp" type="number" step="0.01" class="inp small">
-          </div>
-          <div>
-            <label class="small" for="modTempo">Tempo modelagem (h:mm)</label>
-            <input id="modTempo" class="inp" placeholder="0:30" class="inp small" value="1:00">
-          </div>
-        </div>
-      </div>
+    var filCost=(peso/1000)*custoKg;
+    var energyCost=(h*pot)*kwh;
+    var deprCost=h*depr;
+    var totalService=(filCost+energyCost+modelagem+deprCost)*(1+(margem/100));
 
-      <div class="card">
-        <h2>Resumo</h2>
-        <div id="resumo" class="sum">
-          <div class="hint">Importe ou preencha os campos e clique Calcular.</div>
-        </div>
-        <div class="divider"></div>
-        <div class="flex"><button id="btnCalc" class="btn blue">Calcular</button></div>
-      </div>
-    </div>
+    if($('r_peca')) $('r_peca').textContent=nome||'–';
+    if($('r_cliente')) $('r_cliente').textContent=cliente||'–';
+    if($('r_filamento')) $('r_filamento').textContent=filamento||'–';
+    if($('r_impressora')) $('r_impressora').textContent=imp||'–';
+    if($('r_tempo')) $('r_tempo').textContent=h? (Math.floor(h)+':'+String(Math.round((h-Math.floor(h))*60)).padStart(2,'0')+' (estimado)') : '–';
+    if($('r_peso')) $('r_peso').textContent=peso? peso.toFixed(1) : '–';
+    if($('r_fil_cost')) $('r_fil_cost').textContent=filCost?BRLfmt(filCost):'–';
+    if($('r_energy_cost')) $('r_energy_cost').textContent=energyCost?BRLfmt(energyCost):'–';
+    if($('r_model_cost')) $('r_model_cost').textContent=modelagem?BRLfmt(modelagem):'–';
+    if($('r_depr_cost')) $('r_depr_cost').textContent=deprCost?BRLfmt(deprCost):'–';
+    if($('r_total')) $('r_total').textContent=BRLfmt(totalService);
 
-    <!-- DIREITA -->
-    <div class="section">
-      <div class="card">
-        <h2>Miniatura</h2>
-        <div id="thumbTop"></div>
-      </div>
+    var hh=Math.floor(h), mm=Math.round((h-hh)*60);
+    var linhas=['*Orçamento de Impressão 3D*', `*Cliente:* ${cliente}`];
+    if(nome) linhas.push(`*Peça:* ${nome}`);
+    if(filamento) linhas.push(`*Filamento:* ${filamento}`);
+    if(imp) linhas.push(`*Impressora:* ${imp}`);
+    linhas.push(`*Tempo:* ${hh}h ${mm}min (estimado)`);
+    if(peso) linhas.push(`*Peso:* ${peso.toFixed(1)} g`);
+    linhas.push(`*R$/h modelagem:* ${BRLfmt(modPreco)} | *Tempo modelagem:* ${Math.floor(modH)}h ${Math.round((modH-Math.floor(modH))*60)}min`);
+    linhas.push(`*Valor do serviço:* ${BRLfmt(totalService)}`);
+    var obs=($('obs')?.value||'').trim(); if(obs) linhas.push(`Obs.: ${obs}`);
+    linhas.push('','Agradecemos a preferência!');
+    if($('msg')) $('msg').value=linhas.join('\n');
 
-      <div class="card">
-        <h2>Mensagem do WhatsApp</h2>
-        <textarea id="msg" class="inp" rows="16" placeholder="Prévia da mensagem..."></textarea>
-        <div class="row">
-          <div>
-            <label class="small" for="fone">Whats (só números, DDI 55 fixo)</label>
-            <input id="fone" class="inp" placeholder="DDD + número, ex.: 51999999999">
-          </div>
-          <div class="flex" style="align-items:flex-end; justify-content:flex-end">
-            <button id="btnZap" class="btn green">Enviar Whats</button>
-            <button id="btnCopyThumb" class="btn ghost">Copiar miniatura</button>
-            <a id="btnDownThumb" class="btn ghost" download="miniatura.png">Baixar miniatura</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</main>
+    // destaque verde
+    document.querySelectorAll('button[data-fil]').forEach(b=>b.classList.remove('sel'));
+    var fU=(ftype||'').toUpperCase(); var fk='';
+    if(fU.includes('PETG')||fU.includes('PEG')) fk='PETG'; else if(fU.includes('TRITAN')) fk='TRITAN'; else if(fU.includes('ABS')) fk='ABS'; else if(fU.includes('PLA')) fk='PLA'; else if(fU.includes('SILK')) fk='SILK';
+    if(fk){ var fb=document.querySelector('button[data-fil="'+fk+'"]'); if(fb) fb.classList.add('sel'); }
+
+    document.querySelectorAll('button[data-prn]').forEach(b=>b.classList.remove('sel'));
+    var iU=(imp||'').toUpperCase(); var hit=null; document.querySelectorAll('button[data-prn]').forEach(b=>{ var k=(b.dataset.prn||'').toUpperCase(); if(!hit && (iU===k || iU.includes(k) || k.includes(iU))) hit=b; });
+    if(hit) hit.classList.add('sel');
+
+    var st=$('status'); if(st) st.textContent='cálculos atualizados — '+BRLfmt(totalService);
+  }catch(e){ var st=document.getElementById('status'); if(st) st.textContent='erro inlineRender: '+e; }
+}
+</script>
 
 <script>
-const $ = (id)=>document.getElementById(id);
-let lastThumb = null;
+// Early safety: ensureReady stub so inline path never breaks
+window.ensureReady = window.ensureReady || function(label){
+  try{
+    var tries=0, st=document.getElementById('status');
+    (function tick(){
+      try{
+        if(window.computeDeprForPrinter) computeDeprForPrinter();
+        if(window.highlightFilamento) highlightFilamento();
+        if(window.highlightImpressora) highlightImpressora();
+        if(window.postHighlight) postHighlight();
+        if(window.forceHighlightKeys) forceHighlightKeys();
+        if(window.calcular) calcular();
+      }catch(e){}
+      var totalTxt=(document.getElementById('r_total')||{}).textContent||'';
+      var msgVal=(document.getElementById('msg')||{}).value||'';
+      var ok = totalTxt.trim()!=='' && msgVal.length>0;
+      if(!ok && tries<20){ tries++; return setTimeout(tick,120); }
+      if(st) st.textContent=(label?label+': ':'')+(ok?'cálculos atualizados':'cálculo finalizado');
+    })();
+  }catch(e){}
+};
+</script>
+<script>window.fire=window.fire||function(el){try{if(!el)return;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}catch(e){}};window._fire=window.fire;</script>
+<script>
+// safety stubs loaded ASAP
+window.safeRecalc = window.safeRecalc || function(){ try{
+  if(window.computeDeprForPrinter) computeDeprForPrinter();
+  if(window.highlightFilamento) highlightFilamento();
+  if(window.highlightImpressora) highlightImpressora();
+  if(window.calcular) calcular();
+}catch(e){} };
+window.postHighlight = window.postHighlight || function(){};
+window.forceHighlightKeys = window.forceHighlightKeys || function(){};
+</script>
 
-// utils
-const num = (v)=>{ const x=parseFloat(String(v).replace(',','.')); return isFinite(x)?x:0; };
-function parseHM(v){
-  if(!v) return 0;
-  const s = String(v).trim();
-  // hh:mm
-  let a = s.match(/^(\d+):(\d{1,2})$/);
-  if(a) return (+a[1]) + (+a[2])/60;
-  // 1h30m / 1h / 30m
-  a = s.match(/^(?:(\d+(?:[.,]\d+)?)\s*h)?\s*(?:(\d+)\s*m)?$/i);
-  if(a && (a[1] || a[2])) return (parseFloat((a[1]||'0').replace(',','.'))||0) + ((+a[2]||0)/60);
-  // 90m
-  a = s.match(/^(\d+)\s*m$/i);
-  if(a) return (+a[1])/60;
-  // decimal hours "1.5" or "1,5"
-  a = s.match(/^\d+(?:[.,]\d+)?$/);
-  if(a) return parseFloat(s.replace(',','.'))||0;
-  return 0;
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orçamento de Impressão 3D</title>
+<style>
+  :root{--bg:#0f172a;--panel:#111827;--muted:#334155;--acc:#16a34a;--acc2:#22d3ee;--text:#e5e7eb;--text2:#a1a1aa;--warn:#ef4444}
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;background:linear-gradient(120deg,#0b1228,#0a0f1f);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,"Apple Color Emoji";display:flex;align-items:flex-start;justify-content:center;padding:24px}
+  .wrap{max-width:1100px;width:100%} h1{margin:0 0 16px;font-weight:700;letter-spacing:.3px}
+  .grid{display:grid;gap:16px;grid-template-columns:1.1fr 1fr}
+  .panel{background:rgba(17,24,39,.75);border:1px solid rgba(148,163,184,.15);border-radius:16px;padding:16px;backdrop-filter:blur(6px);box-shadow:0 6px 24px rgba(0,0,0,.35)}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center} .col{flex:1 1 200px}
+  label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px}
+  input[type="text"],input[type="number"],textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(148,163,184,.2);background:#0b1327;color:var(--text);outline:none}
+  input::placeholder,textarea::placeholder{color:#7882a5} textarea{min-height:130px;resize:vertical}
+  .muted{color:#8fa0c1;font-size:12px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(90deg,var(--acc),#10b981);color:#052b1a;font-weight:700;border:none;padding:10px 14px;border-radius:12px;cursor:pointer}
+  .btn2{background:#1f2937;color:#e5e7eb;border:1px solid rgba(148,163,184,.2)} .btn.sel{background:linear-gradient(90deg,var(--acc),#10b981)!important;color:#052b1a!important;border-color:transparent!important} .btn.btn2.sel{background:linear-gradient(90deg,var(--acc),#10b981)!important;color:#052b1a!important;border-color:transparent!important;box-shadow:0 0 0 2px rgba(34,197,94,.25) inset} .btn.btn2.sel{background:linear-gradient(90deg,var(--acc),#10b981)!important;color:#052b1a!important;border-color:transparent!important;box-shadow:0 0 0 2px rgba(34,197,94,.25) inset}
+  .badge{font-size:12px;padding:2px 8px;border-radius:999px;background:#0b1327;border:1px solid rgba(148,163,184,.2)}
+  .grid-2{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+  .money{font-variant-numeric:tabular-nums}
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed rgba(148,163,184,.2)} .kv:last-child{border-bottom:none}
+  .total{font-size:20px;font-weight:800}
+  .thumb{display:flex;align-items:center;justify-content:center;background:#0b1327;border-radius:12px;padding:8px;border:1px solid rgba(148,163,184,.2);min-height:120px}
+  .thumb img{max-width:100%;height:auto;display:block;border-radius:8px}
+  .mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
+.pct.sel,[data-pct].sel{background:linear-gradient(90deg,var(--acc),#10b981)!important;color:#052b1a!important;border-color:transparent!important;box-shadow:0 0 0 2px rgba(34,197,94,.25) inset}
+.btn2.sel, .btn.sel, button.sel, [data-pct].sel, .pct.sel{background:linear-gradient(90deg,var(--acc),#10b981)!important;color:#052b1a!important;border-color:transparent!important;box-shadow:0 0 0 2px rgba(34,197,94,.25) inset}
+</style>
+
+<script>
+// ===== Funções carregadas antes do HTML para evitar qualquer corrida =====
+const $=id=>document.getElementById(id);
+const BRL=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const num=v=>{const s=String(v??'').trim().replace(',', '.');
+
+// Stubs seguros para o fluxo inline
+window.postHighlight = window.postHighlight || function(){};
+window.forceHighlightKeys = window.forceHighlightKeys || function(){};
+window.safeRecalc = window.safeRecalc || function(where){
+  try{
+    if(window.computeDeprForPrinter) computeDeprForPrinter();
+    if(window.highlightFilamento) highlightFilamento();
+    if(window.highlightImpressora) highlightImpressora();
+    if(window.calcular) calcular();
+    var st=document.getElementById('status'); if(st) st.textContent=(where?where+': ':'')+'cálculos atualizados';
+  }catch(e){
+    var st=document.getElementById('status'); if(st) st.textContent='erro inline: '+e;
+  }
+};
+// Safe stubs (no-ops) in case helpers aren't injected yet
+window.postHighlight = window.postHighlight || function(){};
+window.forceHighlightKeys = window.forceHighlightKeys || function(){};
+const x=parseFloat(s);return isFinite(x)?x:0;};
+
+function parseHM(s){ if(!s) return 0; const str=String(s||'').trim();
+  let m=str.match(/^(\d+):(\d{1,2})$/); if(m) return (+m[1])+(+m[2])/60;
+  m=str.match(/(?:(\d+(?:[.,]\d+)?)\s*h)?\s*(?:(\d+)\s*m(?:in)?)?/i); if(m&&(m[1]||m[2])) return (parseFloat((m[1]||'0').replace(',','.'))||0)+((+m[2]||0)/60);
+  m=str.match(/^(\d+)\s*m$/i); if(m) return (+m[1])/60;
+  if(/^\d+(?:[.,]\d+)?$/.test(str)) return parseFloat(str.replace(',','.')); return 0;
 }
-const fmtBRL=(v)=>{try{return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}catch(_){return 'R$ '+(v||0).toFixed(2).replace('.',',')}};
-const horasTxt=(h)=>{const hh=Math.floor(h||0),mm=Math.round(((h||0)-hh)*60);return `${hh}:${String(mm).padStart(2,'0')}`};
-function mapPrinterLabel(txt){ const s=(txt||'').toLowerCase(); if(s.includes('goku')) return 'V.0 Goku'; if(/bag[eé]/.test(s)) return 'V.0 Bagé'; if(/sp-?5/.test(s)) return 'SP5'; if(s.includes('k1')) return 'K1'; return txt; }
-function reducedName(name){ if(!name) return ''; let b=String(name).replace(/\.[^.]+$/,''); const m=b.match(/^(.*?)[_\-\s]\d+h\d+m(\d+s)?/i); if(m) b=m[1]; return b.replace(/[_\-]+/g,' ').replace(/\s{2,}/g,' ').trim(); }
+function formatHM(hours){ const h=Math.floor(Math.max(0,hours||0)); const m=Math.round((Math.max(0,hours||0)-h)*60); return String(h)+':'+String(m).padStart(2,'0'); }
 
-
-// Extract tags from filename: filament, printer, color
-function parseFromFilename(filename){
-  const name = String(filename||'').toLowerCase();
-  const out = { fil:null, printer:[], color:null };
-
-  const filTags = [['pla','PLA'],['petg','PETG'],['abs','ABS'],['tpu','TPU'],['tritan','TRITAN'],['silk','SILK']];
-  for(const [kw,label] of filTags){
-    if(name.includes(kw)){ out.fil = label; break; }
-  }
-  if(name.includes('goku')) out.printer.push('goku');
-  if(name.match(/bag[eé]/)) out.printer.push('bage');
-  if(name.includes('sp5') || name.includes('sp-5')) out.printer.push('sp5');
-  if(name.includes('k1')) out.printer.push('k1');
-
-  const colorList = ['preto','branco','azul','vermelho','amarelo','verde','roxo','rosa','laranja','marrom','cinza','prata','dourado','transparente','natural','bege'];
-  let m = name.match(/(?:\[cor=([^\]]+)\])|(?:\bcor-([a-z0-9_]+))|(?:\bcolor-([a-z0-9_]+))/i);
-  if(m){
-    out.color = (m[1]||m[2]||m[3]||'').replace(/[_\-]+/g,' ').trim();
-  }else{
-    for(const c of colorList){
-      if(name.includes(c)){ out.color = c; break; }
-    }
-  }
-  if(out.color){
-    out.color = out.color.replace(/^(\w)/, (x)=>x.toUpperCase());
-  }
-  return out;
+function detectColorFromFilename(name){ const up=(name||'').toUpperCase();
+  const map=[['PRETO','Preto'],['BRANCO','Branco'],['NATURAL','Natural'],['CINZA','Cinza'],['AZUL','Azul'],['VERMELHO','Vermelho'],['VERDE','Verde'],['AMARELO','Amarelo'],['PRATA','Prata'],['DOURADO','Dourado'],['OURO','Dourado'],['SILK','Silk']];
+  for(const [k,v] of map){ if(up.includes(k)) return v; } return '';
 }
-// G-code parse
+function detectPrinterFrom(filename){ const up=(filename||'').toUpperCase();
+  if(/SP-?5|TWOTREES|TT\s*SP-?5/.test(up)) return 'SP5';
+  if(/\bK1\b/.test(up)) return 'Creality K1';
+  if(/GOKU/.test(up)) return 'V.0 Goku';
+  if(/BUMBLEBEE/.test(up)) return 'V.0 Bumblebee';
+  if(/V(?:\.|)0/.test(up) || /VORON\s*0/.test(up)) return 'V.0 Goku';
+  return '';
+}
+
+// Parser do G-code
 function parseG(text){
-  let weight=null, hours=null;
+  let weight=null, hours=null, thumb=null;
+  try{
+    // Peso
+    const wAll = [...text.matchAll(/filament\s+(?:total\s+)?used\s*\[?\s*g\s*\]?\s*[:=]\s*([\d.,]+)/gim)];
+    if(wAll.length){ const w=wAll[wAll.length-1][1].replace(',', '.'); const n=parseFloat(w); if(isFinite(n)) weight=n; }
 
-  // peso: aceita "filament used [g]" ou "filament weight [g]" e variações
-  let m = text.match(/^\s*;\s*filament\s+(used|weight)\s*\[?g\]?\s*[:=]\s*([\d\.]+)/gmi);
-  if(m && m.length){
-    const v=m[m.length-1].match(/([\d\.]+)/);
-    if(v) weight=parseFloat(v[1]);
-  }
-
-  // tempo: Orca/Prusa "estimated printing time = ..." ou fallback TIME_ELAPSED
-  let t = text.match(/^\s*;\s*estimated printing time.*=\s*([^\r\n]+)/gmi);
-  if(t && t.length){
-    const val=t[t.length-1].split('=').pop().trim();
-    const mh=val.match(/(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/i);
-    if(mh) hours=(+mh[1]||0)+(+mh[2]||0)/60+(+mh[3]||0)/3600;
-  }
-  if(hours==null){
-    const te=[...text.matchAll(/^\s*;TIME_ELAPSED:\s*([\d\.]+)/gmi)];
-    if(te.length){ const s=parseFloat(te[te.length-1][1]); hours=s/3600; }
-  }
-
-  // miniatura: procurar TODAS e preferir 300x300; senão, maior disponível
-  const allThumbs = [...text.matchAll(/^\s*;\s*thumbnail begin\s+(\d+)x(\d+)\s+\d+\s*\n([\s\S]*?)^\s*;\s*thumbnail end/gmi)];
-  if(allThumbs.length){
-    const clean = (s)=> s.split(/\r?\n/).map(l=>l.replace(/^\s*;\s*/,'').trim()).join('');
-    // preferir 300x300
-    let pick = allThumbs.find(m => (+m[1]===300 && +m[2]===300));
-    if(!pick){
-      // fallback: maior área
-      pick = allThumbs.sort((a,b)=>(+b[1]*+b[2])-(+a[1]*+a[2]))[0];
+    // Tempo
+    const tAll = [...text.matchAll(/estimated\s+printing\s+time[^\n=]*=\s*([^\r\n]+)/gim)];
+    if(tAll.length){
+      const val = tAll[tAll.length-1][1].trim();
+      const hm = val.match(/(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?\s*(?:(\d+)\s*s)?/i) || val.match(/(\d+)h(\d{1,2})m(\d{1,2})s/i);
+      if(hm) hours = (+hm[1]||0) + (+hm[2]||0)/60 + (+hm[3]||0)/3600;
     }
-    const body = clean(pick[3]);
-    lastThumb='data:image/png;base64,'+body;
-    const img=new Image(); img.src=lastThumb;
-    const top=$('thumbTop'); if(top){ top.innerHTML=''; top.appendChild(img); }
-    const a=$('btnDownThumb'); if(a) a.href=lastThumb;
-    // expor dimensão escolhida
-    window.__thumbWH = `${pick[1]}x${pick[2]}`;
-  }
-  return {weight,hours};
+    if(hours==null){
+      const telp=[...text.matchAll(/;TIME_ELAPSED:\s*([\d.]+)/gim)];
+      if(telp.length){ const sec=parseFloat(telp[telp.length-1][1]); if(isFinite(sec)) hours=sec/3600; }
+    }
+
+    // Miniatura
+    const thAll=[...text.matchAll(/^\s*;\s*thumbnail begin\s+(\d+)x(\d+)\s+(\d+)\s*\r?\n([\s\S]*?)\r?\n^\s*;\s*thumbnail end/gim)];
+    let thumbs=[];
+    if(thAll.length){
+      for(const m of thAll){
+        const raw=(m[4]||'').split(/\r?\n/).map(l=>l.replace(/^\s*;\s*/,'')).join('');
+        thumbs.push({w:+m[1],h:+m[2],body:raw});
+      }
+    }else{
+      const lines=text.split(/\r?\n/); let i=0;
+      while(i<lines.length){
+        const beg=lines[i].match(/^\s*;\s*thumbnail begin\s+(\d+)x(\d+)\s+(\d+)/i);
+        if(beg){
+          const W=+beg[1], H=+beg[2]; let j=i+1, body=[];
+          while(j<lines.length && !/^\s*;\s*thumbnail end/i.test(lines[j])){
+            body.push(lines[j].replace(/^\s*;\s*/,'').trim()); j++;
+          }
+          if(j<lines.length){ thumbs.push({w:W,h:H,body:body.join('')}); i=j; }
+        }
+        i++;
+      }
+    }
+    if(thumbs.length){
+      let pick = thumbs.find(t=>t.w===300 && t.h===300);
+      if(!pick){ pick = thumbs.sort((a,b)=>(b.w*b.h)-(a.w*a.h))[0]; }
+      if(pick.body && pick.body.length>100) thumb='data:image/png;base64,'+pick.body;
+    }
+  }catch(e){ console.error('parseG error', e); }
+  return {weight,hours,thumb};
 }
 
-// Calculadora + Whats
-function calcular(){
-  const peso=num($('peso').value);
-  const custoKg=num($('custoKg').value || 120); // padrão
-  const tempoH=parseHM($('tempo').value);
-  const kwh=num($('kwh').value);
-  const w=num($('w').value)||350;
-  const margem=num($('margem').value)||100;
-  const modPreco=num($('modPreco').value);
-  const modTempo=parseHM($('modTempo').value);
+// Preencher a UI
+function populateFromParsed(p, filename){
+  if(p.hours!=null){ $('tempo').value = formatHM(p.hours); }
+  if(p.weight!=null){ $('peso').value = p.weight.toFixed(1); }
+  if(p.thumb){ const img=new Image(); img.src=p.thumb; $('thumbTop').innerHTML=''; $('thumbTop').appendChild(img); }
+  $('status').textContent='G-code importado.';
+  $('fname').textContent = filename || '';
+  _fire($('tempo')); _fire($('peso')); _fire($('nomePeca')); _fire($('filamento')); _fire($('cor')); _fire($('impressora')); inlineRenderNow();
 
-  const material=(peso/1000)*custoKg;
-  const energia=((w/1000)*tempoH)*kwh;
-  const base=material+energia;
-  const comMarg=base*(1+margem/100);
-  const model=modPreco*modTempo;
-  const total=comMarg+model;
-
-  // resumo
-  const sum = $('resumo');
-  if(sum){
-    sum.innerHTML =
-      `<div>Material</div><div><b>${fmtBRL(material)}</b></div>`+
-      `<div>Energia</div><div><b>${fmtBRL(energia)}</b></div>`+
-      `<div>Base c/ margem (${margem}%)</div><div><b>${fmtBRL(comMarg)}</b></div>`+
-      `<div>Modelagem</div><div><b>${fmtBRL(model)}</b></div>`+
-      `<div class="divider" style="grid-column:1 / -1"></div>`+
-      `<div><b>Valor do serviço</b></div><div class="total">${fmtBRL(total)}</div>`;
+  if(filename){
+    const base=filename.replace(/\.gcode$/i,''); const idxU=base.indexOf('_'); const idxDash=base.indexOf(' - ');
+    const cut=idxU>0?base.slice(0,idxU):(idxDash>0?base.slice(0,idxDash):base);
+    if(!$('nomePeca').value.trim()) $('nomePeca').value=cut;
+    const up=filename.toUpperCase();
+    const types=['PLA HT','PLA','ABS','PETG','TRITAN','SILK','TPU','ASA','NYLON','PS'];
+    const tipo = types.find(t=>up.includes(t)) || '';
+    if(tipo) $('filamento').value=tipo;
+    const color = detectColorFromFilename(filename); if(color) $('cor').value=color;
+    const prn = detectPrinterFrom(filename); if(prn) $('impressora').value=prn;
+    highlightFilamento(); highlightImpressora(); forceHighlightKeys(); computeDeprForPrinter(); postHighlight(); safeRecalc('import'); setTimeout(()=>safeRecalc('import async'), 30); computeDeprForPrinter();
   }
+  calcular();
+}
 
-  // mensagem
-  const nomePeca=$('nomePeca').value.trim();
-  const cliente=$('nomeCliente').value.trim();
-  const sel=document.querySelector('input[name=fil]:checked');
-  const filSel=(sel? sel.id.replace('f_','') : '').toUpperCase();
-  const cor=$('cor').value.trim();
-  const imps=Array.from(document.querySelectorAll('#p_goku,#p_bage,#p_sp5,#p_k1'))
-      .filter(i=>i.checked).map(i=>mapPrinterLabel(i.nextSibling.textContent.trim()));
-  const obs=$('obs').value.trim();
+// Leitor de arquivo
+function readFile(file){
+  try{
+    const st=$('status'); if(st) st.textContent='Lendo arquivo...';
+    if(!file){ const fi=$('file'); file=fi&&fi.files&&fi.files[0]; }
+    if(!file){ st.textContent='Selecione um arquivo primeiro.'; return; }
+    window._lastFileName = file.name || '';
+    const r=new FileReader();
+    r.onload = ev => { try{ const tx=String(ev.target.result||''); const p=parseG(tx); populateFromParsed(p, file.name||''); }catch(e){ st.textContent='Falha ao processar.'; } };
+    r.onerror = ()=>{ st.textContent='Falha ao ler o arquivo.'; };
+    r.readAsText(file);
+  }catch(e){ const st=$('status'); if(st) st.textContent='Erro: '+e.message; }
+}
+
+// Utilidades
+function highlightFilamento(){
+  try{
+    const val = ($('filamento').value||'').toUpperCase();
+    const keys = ['PLA HT','PLA','ABS','PETG','TRITAN','SILK'];
+    let match = keys.find(k=> val.includes(k));
+    if(match==='PLA HT') match='PLA';
+    document.querySelectorAll('button[data-fil]').forEach(b=>b.classList.remove('sel'));
+    if(match){
+      const btn = document.querySelector(`button[data-fil="${match}"]`) || Array.from(document.querySelectorAll('button[data-fil]')).find(b=> val.includes((b.dataset.fil||'').toUpperCase()));
+      if(btn) btn.classList.add('sel');
+    }
+  }catch(e){}
+}
+function highlightImpressora(){
+  try{
+    const val = ($('impressora').value||'').toUpperCase();
+    document.querySelectorAll('button[data-prn]').forEach(b=>b.classList.remove('sel'));
+    let hit = null;
+    document.querySelectorAll('button[data-prn]').forEach(b=>{ 
+      const key = (b.dataset.prn||'').toUpperCase();
+      if(!hit && (val===key || val.includes(key) || key.includes(val))) hit=b;
+    });
+    if(hit) hit.classList.add('sel');
+  }catch(e){}
+}
+
+function montarMensagem(d){
+  const nome = d.nome || $('nomePeca').value.trim();
+  const cliente = $('nomeCliente').value.trim() || 'Cliente';
+  const filamento = d.filamento || ($('filamento').value.trim() + ( $('cor').value.trim()?(' – '+$('cor').value.trim()):'' ));
+  const impressora = d.impressora || $('impressora').value.trim();
+  const tempoHoras = d.tempo || 0;
+  const hh = Math.floor(tempoHoras), mm = Math.round((tempoHoras-hh)*60);
+  const peso = d.pesoG || num($('peso').value);
+  const modH=parseHM($('modTempo').value), modPreco=num($('modPreco').value);
+  const modHH=Math.floor(modH), modMM=Math.round((modH-modHH)*60);
+  const total = d.total || 0;
+  const obs = $('obs').value.trim();
+
+  const linhas = [];
+  linhas.push('*Orçamento de Impressão 3D*');
+  linhas.push(`*Cliente:* ${cliente}`);
+  if(nome) linhas.push(`*Peça:* ${nome}`);
+  if(filamento.trim()) linhas.push(`*Filamento:* ${filamento}`);
+  if(impressora) linhas.push(`*Impressora:* ${impressora}`);
+  linhas.push(`*Tempo:* ${hh}h ${mm}min (estimado)`);
+  linhas.push(`*Peso:* ${peso.toFixed(1)} g`);
+  linhas.push(`*R$/h modelagem:* ${BRL.format(modPreco)} | *Tempo modelagem:* ${modHH}h ${modMM}min`);
+  linhas.push(`*Valor do serviço:* ${BRL.format(total)}`);
+  if(obs) linhas.push(`Obs.: ${obs}`);
+  linhas.push('');
+  linhas.push('Agradecemos a preferência!');
+  $('msg').value = linhas.join('
+');
+}`);
+  if(d.nome) linhas.push(`*Peça:* ${d.nome}`);
+  linhas.push(`*Cliente:* ${$('nomeCliente').value.trim() || 'Cliente'}`);
+  if(d.filamento) linhas.push(`*Filamento:* ${d.filamento}`);
+  if(d.impressora) linhas.push(`*Impressora:* ${d.impressora}`);
+  if(d.tempo){ const hh=Math.floor(d.tempo),mm=Math.round((d.tempo-hh)*60); linhas.push(`*Tempo:* ${hh}h ${mm}min (estimado)`); }
+  if(d.pesoG) linhas.push(`*Peso:* ${d.pesoG.toFixed(1)} g`);
+  const modH=parseHM($('modTempo').value),modPreco=num($('modPreco').value); const hH=Math.floor(modH), hM=Math.round((modH-hH)*60);
+  linhas.push(`*R$/h modelagem:* ${BRL.format(modPreco)} | *Tempo modelagem:* ${hH}h ${hM}min`);
+  const obs=$('obs').value.trim(); if(obs) linhas.push(`Obs.: ${obs}`);
+  linhas.push('Agradecemos a preferência!');
+  $('msg').value=linhas.join('\n');
+}
+
+function calcular(){
+  const nome=$('nomePeca').value.trim(), cliente=$('nomeCliente').value.trim();
+  const filamentoTipo=$('filamento').value.trim(), cor=$('cor').value.trim(); const filamento=filamentoTipo + (cor?(' – '+cor):'');
+  const impressora=$('impressora').value.trim(), tempoTxt=$('tempo').value.trim(), pesoG=num($('peso').value);
+  const custoKg=num($('custoKg').value), kwh=num($('kwh').value), pot=num($('pot').value), margem=num($('margem').value);
+  const modH=parseHM($('modTempo').value), modPreco=num($('modPreco').value), modelagem=modH*modPreco;
+  const h=parseHM(tempoTxt), filCost=(pesoG/1000)*custoKg, energyCost=(h*pot)*kwh;
+  let depr=num($('depr').value);
+  if(depr<=0 && impressora){
+    const vida=num($('dep_vida_padrao').value)||2600;
+    if(/SP5/i.test(impressora)) depr=((1400+2600)/vida);
+    if(/K1/i.test(impressora)) depr=((3750+850)/vida);
+    if(/Goku/i.test(impressora)) depr=((2300+700)/vida);
+    $('depr').value=(depr||0).toFixed(2);
+  }
+  const deprCost=h*depr;
+  const custoDireto=filCost+energyCost+modelagem+deprCost;
+  const total=custoDireto*(1+(margem/100));
+
+  $('r_peca').textContent=nome||'–'; $('r_cliente').textContent=cliente||'–'; $('r_filamento').textContent=filamento||'–'; $('r_impressora').textContent=impressora||'–';
+  $('r_tempo').textContent=h?formatHM(h)+' (estimado)':'–'; $('r_peso').textContent=pesoG?pesoG.toFixed(1):'–';
+  $('r_fil_cost').textContent=fmtBRL(filCost); $('r_energy_cost').textContent=fmtBRL(energyCost); $('r_model_cost').textContent=fmtBRL(modelagem);
+  $('r_depr_cost').textContent=fmtBRL(deprCost); $('r_total').textContent=fmtBRL(total);
+
+  montarMensagem({ total, nome, cliente, filamento, impressora, tempo:h, pesoG, obs:$('obs').value }); try{ document.getElementById('status').textContent='cálculos atualizados — '+BRL.format(total); }catch(e){}
+}
+
+function copyThumb(){
+  const badge=document.getElementById('badgeInfo'); const setB=t=>{ if(badge) badge.textContent=t; };
+  try{
+    let src='';
+    const top=document.getElementById('thumbTop');
+    const img = top?.querySelector('img') || document.querySelector('#thumbTop img') || document.querySelector('img[data-thumb]') || document.querySelector('img[src^="data:image"]');
+    if(img && img.src) src=img.src;
+    if(!src && top){
+      const bg=getComputedStyle(top).backgroundImage||'';
+      const m=bg.match(/url\(["']?(.*?)["']?\)/); if(m) src=m[1];
+    }
+    const cvs = top?.querySelector('canvas');
+    function fromCanvas(cv){ return new Promise((res,rej)=>{ try{ cv.toBlob(b=>b?res(b):rej(new Error('toBlob fail')),'image/png'); }catch(e){ rej(e); } }) }
+    function writeBlob(blob){
+      if(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write){
+        return navigator.clipboard.write([ new ClipboardItem({[blob.type||'image/png']: blob}) ]);
+      }
+      return Promise.reject(new Error('no image clipboard'));
+    }
+    function dataURLtoBlob(dataURL){
+      try{
+        const parts=dataURL.split(','); const mime=(parts[0].match(/data:(.*?);base64/)||[])[1]||'image/png';
+        const bin=atob(parts[1]||''); const arr=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+        return new Blob([arr],{type:mime});
+      }catch(e){ return null; }
+    }
+    if(cvs){ fromCanvas(cvs).then(writeBlob).then(()=>setB('miniatura copiada')).catch(()=>setB('falha ao copiar')); return; }
+    if(src){
+      const doWrite = src.startsWith('data:image')
+        ? (blob=> writeBlob(blob))(dataURLtoBlob(src))
+        : fetch(src).then(r=>r.blob()).then(writeBlob);
+      Promise.resolve(doWrite).then(()=>setB('miniatura copiada'))
+        .catch(()=>{ if(navigator.clipboard?.writeText){ navigator.clipboard.writeText(src).then(()=>setB('miniatura em texto')).catch(()=>setB('falha ao copiar')); } else { setB('falha ao copiar'); } });
+      return;
+    }
+    setB('sem miniatura');
+  }catch(e){ setB('sem miniatura'); }
+}
+  try{
+    const imgEl = document.getElementById('thumbTop')?.querySelector('img');
+    if(!imgEl) throw new Error('Sem miniatura');
+    const src = imgEl.src||'';
+    const secure = (window.isSecureContext === true);
+
+    function dataURLtoBlob(dataURL){
+      try{
+        const parts=dataURL.split(',');
+        const mime=(parts[0].match(/data:(.*?);base64/)||[])[1] || 'image/png';
+        const bin=atob(parts[1]||'');
+        const arr=new Uint8Array(bin.length);
+        for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+        return new Blob([arr],{type:mime});
+      }catch(e){ return null; }
+    }
+    function canvasBlobFromUrl(u){
+      return new Promise((res,rej)=>{
+        try{
+          const i=new Image(); i.crossOrigin='anonymous';
+          i.onload=()=>{ const c=document.createElement('canvas'); c.width=i.width; c.height=i.height; c.getContext('2d').drawImage(i,0,0); c.toBlob(b=>b?res(b):rej(new Error('toBlob fail')),'image/png'); };
+          i.onerror=()=>rej(new Error('img load fail'));
+          i.src=u;
+        }catch(e){ rej(e); }
+      });
+    }
+    function writeBlobToClipboard(blob){
+      if(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write){
+        const item=new ClipboardItem({[blob.type||'image/png']: blob});
+        return navigator.clipboard.write([item]);
+      }
+      return Promise.reject(new Error('no image clipboard API'));
+    }
+    function tryContentEditable(){
+      return new Promise((resolve,reject)=>{
+        try{
+          const box=document.createElement('div');
+          box.contentEditable='true'; box.style.position='fixed'; box.style.left='-9999px';
+          const im=document.createElement('img'); im.src=src; box.appendChild(im);
+          document.body.appendChild(box);
+          const range=document.createRange(); range.selectNode(im);
+          const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+          const ok=document.execCommand('copy');
+          sel.removeAllRanges(); document.body.removeChild(box);
+          ok?resolve():reject(new Error('execCommand copy image fail'));
+        }catch(e){ reject(e); }
+      });
+    }
+    function tryWriteText(){
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        return navigator.clipboard.writeText(src);
+      }
+      return Promise.reject(new Error('no clipboard.writeText'));
+    }
+    function tryDownload(){
+      try{
+        const a=document.createElement('a'); a.href=src; a.download='miniatura.png';
+        document.body.appendChild(a); a.click(); a.remove();
+        return Promise.resolve();
+      }catch(e){ return Promise.reject(e); }
+    }
+
+    // Estratégia: se for contexto seguro, tenta ClipboardItem; caso contrário, tenta contentEditable
+    const first = secure
+      ? (src.startsWith('data:image') ? Promise.resolve(dataURLtoBlob(src)) : fetch(src).then(r=>r.blob()).catch(()=>canvasBlobFromUrl(src))).then(writeBlobToClipboard)
+      : tryContentEditable();
+
+    first.then(()=>setBadge('miniatura copiada'))
+      .catch(()=>tryWriteText().then(()=>setBadge('miniatura em texto'))
+        .catch(()=>tryDownload().then(()=>setBadge('miniatura baixada'))
+          .catch(()=>setBadge('falha ao copiar'))));
+
+  }catch(e){ setBadge('sem miniatura'); }
+}
+  try{
+    const imgEl = document.getElementById('thumbTop')?.querySelector('img');
+    if(!imgEl) throw new Error('Sem miniatura');
+    const src = imgEl.src||'';
+
+    // Try modern API first
+    function dataURLtoBlob(dataURL){
+      try{
+        const parts=dataURL.split(',');
+        const mime=(parts[0].match(/data:(.*?);base64/)||[])[1] || 'image/png';
+        const bin=atob(parts[1]||'');
+        const arr=new Uint8Array(bin.length);
+        for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+        return new Blob([arr],{type:mime});
+      }catch(e){ return null; }
+    }
+    function canvasBlobFromUrl(u){
+      return new Promise((res,rej)=>{
+        try{
+          const i=new Image(); i.crossOrigin='anonymous';
+          i.onload=()=>{ const c=document.createElement('canvas'); c.width=i.width; c.height=i.height; c.getContext('2d').drawImage(i,0,0); c.toBlob(b=>b?res(b):rej(new Error('toBlob fail')),'image/png'); };
+          i.onerror=()=>rej(new Error('img load fail'));
+          i.src=u;
+        }catch(e){ rej(e); }
+      });
+    }
+    function writeBlobToClipboard(blob){
+      if(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write){
+        const item=new ClipboardItem({[blob.type||'image/png']: blob});
+        return navigator.clipboard.write([item]);
+      }
+      return Promise.reject(new Error('no image clipboard API'));
+    }
+
+    const tryModern = ()=>{
+      if(src.startsWith('data:image')){
+        const b=dataURLtoBlob(src);
+        if(!b) return Promise.reject(new Error('dataurl->blob falhou'));
+        return writeBlobToClipboard(b);
+      }else{
+        return fetch(src).then(r=>r.blob()).catch(()=>canvasBlobFromUrl(src)).then(writeBlobToClipboard);
+      }
+    };
+
+    const tryContentEditable = ()=> new Promise((resolve,reject)=>{
+      try{
+        const box=document.createElement('div');
+        box.contentEditable='true'; box.style.position='fixed'; box.style.left='-9999px';
+        const im=document.createElement('img'); im.src=src; box.appendChild(im);
+        document.body.appendChild(box);
+        const range=document.createRange(); range.selectNode(im);
+        const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+        const ok=document.execCommand('copy');
+        sel.removeAllRanges(); document.body.removeChild(box);
+        ok?resolve():reject(new Error('execCommand copy image fail'));
+      }catch(e){ reject(e); }
+    });
+
+    const tryWriteText = ()=>{
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        return navigator.clipboard.writeText(src);
+      }
+      return Promise.reject(new Error('no clipboard.writeText'));
+    };
+
+    const tryDownload = ()=>{
+      try{
+        const a=document.createElement('a'); a.href=src; a.download='miniatura.png';
+        document.body.appendChild(a); a.click(); a.remove();
+        return Promise.resolve();
+      }catch(e){ return Promise.reject(e); }
+    };
+
+    tryModern()
+      .then(()=>setBadge('miniatura copiada'))
+      .catch(()=>tryContentEditable().then(()=>setBadge('miniatura copiada (html)'))
+        .catch(()=>tryWriteText().then(()=>setBadge('miniatura em texto'))
+          .catch(()=>tryDownload().then(()=>setBadge('miniatura baixada'))
+            .catch(()=>setBadge('falha ao copiar')))));
+
+  }catch(e){ setBadge('sem miniatura'); }
+};
+
+    function dataURLtoBlob(dataURL){
+      try{
+        const parts=dataURL.split(',');
+        const mime=(parts[0].match(/data:(.*?);base64/)||[])[1] || 'image/png';
+        const bin=atob(parts[1]||'');
+        const arr=new Uint8Array(bin.length);
+        for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+        return new Blob([arr],{type:mime});
+      }catch(e){ return null; }
+    }
+
+    function canvasBlobFromUrl(u){
+      return new Promise((res,rej)=>{
+        try{
+          const i=new Image(); i.crossOrigin='anonymous';
+          i.onload=()=>{ const c=document.createElement('canvas'); c.width=i.width; c.height=i.height; c.getContext('2d').drawImage(i,0,0); c.toBlob(b=>b?res(b):rej(new Error('toBlob fail')),'image/png'); };
+          i.onerror=()=>rej(new Error('img load fail'));
+          i.src=u;
+        }catch(e){ rej(e); }
+      });
+    }
+
+    const writeBlob = (blob)=>{
+      if(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write){
+        const item=new ClipboardItem({[blob.type||'image/png']: blob});
+        return navigator.clipboard.write([item]);
+      } else if(navigator.clipboard && navigator.clipboard.writeText){
+        // fallback: copy dataURL text
+        return navigator.clipboard.writeText(src);
+      } else {
+        // ultimate fallback
+        const ta=document.createElement('textarea'); ta.value=src; document.body.appendChild(ta); ta.select(); const ok=document.execCommand('copy'); document.body.removeChild(ta);
+        return ok?Promise.resolve():Promise.reject(new Error('execCommand fail'));
+      }
+    };
+
+    if(src.startsWith('data:image')){
+      const blob=dataURLtoBlob(src);
+      if(blob) writeBlob(blob).then(()=>done(true)).catch(()=>done(false));
+      else done(false);
+    }else{
+      fetch(src).then(r=>r.blob()).catch(()=>canvasBlobFromUrl(src)).then(b=>writeBlob(b)).then(()=>done(true)).catch(()=>done(false));
+    }
+  }catch(e){
+    const b=document.getElementById('badgeInfo'); if(b) b.textContent='sem miniatura';
+  }
+};
+
+    if(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write){
+      const toBlob = ()=> fetch(dataUrl).then(r=>r.blob()).catch(()=>{
+        return new Promise((res,rej)=>{
+          try{
+            const c=document.createElement('canvas'); const i=new Image(); i.crossOrigin='anonymous'; 
+            i.onload=()=>{ c.width=i.width; c.height=i.height; const ctx=c.getContext('2d'); ctx.drawImage(i,0,0); c.toBlob(b=>b?res(b):rej(new Error('toBlob fail')),'image/png'); };
+            i.onerror=()=>rej(new Error('img load fail')); i.src=dataUrl;
+          }catch(e){ rej(e); }
+        });
+      });
+      toBlob().then(blob=>{
+        const item = new ClipboardItem({[blob.type]: blob});
+        return navigator.clipboard.write([item]);
+      }).then(()=>done(true)).catch(()=>done(false));
+      return;
+    }
+
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(dataUrl).then(()=>done(true)).catch(()=>done(false));
+      return;
+    }
+
+    const ta=document.createElement('textarea'); ta.value=dataUrl; document.body.appendChild(ta); ta.select();
+    const ok=document.execCommand('copy'); document.body.removeChild(ta); done(!!ok);
+  }catch(e){
+    const b=document.getElementById('badgeInfo'); if(b) b.textContent='sem miniatura';
+  }
+}
+    fetch(dataUrl).then(r=>r.blob()).then(blob=>{
+      const item=new ClipboardItem({[blob.type]: blob});
+      return navigator.clipboard.write([item]);
+    }).then(()=>{ $('badgeInfo').textContent='miniatura copiada'; }).catch(err=>{ $('badgeInfo').textContent='falha ao copiar'; console.error(err); });
+  }catch(e){ $('badgeInfo').textContent='sem miniatura'; }
+}catch(e){ $('badgeInfo').textContent='sem miniatura'; } }
+function copyMsg(){ $('msg').select(); document.execCommand('copy'); $('badgeInfo').textContent='mensagem copiada'; }
+function openWhats(ev){
+  try{ if(ev) ev.preventDefault(); }catch(e){}
+  try{ if(typeof inlineRenderNow==='function') inlineRenderNow(); }catch(e){}
+  const txt = (typeof buildWhatsText==='function') ? buildWhatsText() : (document.getElementById('msg')?.value||'');
+  let phone=String(document.getElementById('foneCliente')?.value||'').replace(/\D/g,'');
+  if(phone && !phone.startsWith('55')) phone='55'+phone; if(!phone) phone='55';
+  const url='https://wa.me/'+phone+'?text='+encodeURIComponent(txt);
+  try{ window.location.href=url; }catch(_){}
+  try{
+    const win = window.open(url,'_blank','noopener'); if(!win || win.closed) throw new Error('popup');
+  }catch(e){
+    try{ const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove(); }
+    catch(_){}
+  }
+  const badge=document.getElementById('badgeInfo'); if(badge) badge.textContent='abrindo Whats…';
+}catch(e){}
+  const txt = (typeof buildWhatsText==='function') ? buildWhatsText() : (document.getElementById('msg')?.value||'');
+  let phone=String(document.getElementById('foneCliente')?.value||'').replace(/\D/g,'');
+  if(phone && !phone.startsWith('55')) phone='55'+phone; if(!phone) phone='55';
+  const url='https://wa.me/'+phone+'?text='+encodeURIComponent(txt);
+  // Abre diretamente na mesma aba (mais confiável em arquivo local ou sem HTTPS)
+  try{ window.location.href = url; return; }catch(_){}
+  // Fallbacks
+  try{
+    const win = window.open(url,'_blank','noopener');
+    if(!win || win.closed) throw new Error('popup');
+  }catch(e){
+    try{ const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove(); }
+    catch(_){ /* última tentativa já foi o location */ }
+  }
+  const badge=document.getElementById('badgeInfo'); if(badge) badge.textContent='abrindo Whats…';
+}catch(e){}
+  const txt = (typeof buildWhatsText==='function') ? buildWhatsText() : (document.getElementById('msg')?.value||'');
+  let phone=String(document.getElementById('foneCliente')?.value||'').replace(/\D/g,'');
+  if(phone && !phone.startsWith('55')) phone='55'+phone; if(!phone) phone='55';
+  const url='https://wa.me/'+phone+'?text='+encodeURIComponent(txt);
+  try{
+    const win = window.open(url,'_blank','noopener');
+    if(!win || win.closed){ throw new Error('popup'); }
+  }catch(e){
+    try{ const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove(); }
+    catch(_){ try{ window.location.href=url; }catch(__){} }
+  }
+  const badge=document.getElementById('badgeInfo'); if(badge) badge.textContent='abrindo Whats…';
+}catch(e){}
+  const txt = (typeof buildWhatsText==='function') ? buildWhatsText() : (document.getElementById('msg')?.value||'');
+  let phone=String(document.getElementById('foneCliente')?.value||'').replace(/\D/g,'');
+  if(phone && !phone.startsWith('55')) phone='55'+phone; if(!phone) phone='55';
+  const url='https://wa.me/'+phone+'?text='+encodeURIComponent(txt);
+  try{
+    const w=window.open(url,'_blank'); if(!w || w.closed) throw new Error('popup block');
+  }catch(e){
+    try{ const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove(); }
+    catch(_){ try{ window.location.href=url; }catch(__){} }
+  }
+}catch(e){}
+  const txt=(document.getElementById('msg')?.value)||'';
+  let phone=String(document.getElementById('foneCliente')?.value||'').replace(/\D/g,'');
+  if(phone && !phone.startsWith('55')) phone='55'+phone;
+  if(!phone) phone='55';
+  const url='https://wa.me/'+phone+'?text='+encodeURIComponent(txt);
+  try{
+    const win = window.open(url,'_blank');
+    if(!win || win.closed) throw new Error('popup bloqueado');
+  }catch(e){
+    try{
+      const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+    }catch(_){
+      try{ window.location.href=url; }catch(__){}
+    }
+  }
+}
+
+function computeDeprForPrinter(){
+  const prn = ($('impressora').value||'').trim();
+  const vida = num($('dep_vida_padrao').value)||2600;
+  let total = 0;
+  if(/SP5/i.test(prn)){ total = num($('dep_sp5_val').value)+num($('dep_sp5_up').value); }
+  else if(/K1/i.test(prn)){ total = num($('dep_k1_val').value)+num($('dep_k1_up').value); }
+  else if(/BUMBLEBEE|BAGÉ|BAGE/i.test(prn)){ total = num($('dep_v0bage_val').value)+num($('dep_v0bage_up').value); }
+  else if(/GOKU/i.test(prn)){ total = num($('dep_v0goku_val').value)+num($('dep_v0goku_up').value); }
+  else { return null; }
+  const hr = vida>0 ? (total/vida) : 0;
+  $('depr').value = hr.toFixed(2);
+  return hr;
+}
+(function(){
+  const ids=['impressora','dep_sp5_val','dep_sp5_up','dep_k1_val','dep_k1_up','dep_v0goku_val','dep_v0goku_up','dep_v0bage_val','dep_v0bage_up','dep_vida_padrao'];
+  ids.forEach(id=>{
+    const el=$(id); if(!el) return;
+    ['input','change'].forEach(ev=>el.addEventListener(ev, ()=>{ computeDeprForPrinter(); calcular(); }));
+  });
+})();
+
+// Auto-recalcular ao editar campos relevantes
+(function(){
+  const ids=['tempo','peso','custoKg','kwh','pot','margem','modTempo','modPreco','depr','filamento','impressora','cor'];
+  ids.forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    ['input','change'].forEach(ev=>el.addEventListener(ev, ()=>{ 
+      try{ if(id==='impressora') computeDeprForPrinter(); calcular(); }catch(_){ calcular(); }
+    }));
+  });
+})();
+
+
+// Auto-recalcular ao editar campos relevantes (reforçado)
+(function(){
+  const ids=['tempo','peso','custoKg','kwh','pot','margem','modTempo','modPreco','depr','filamento','impressora','cor'];
+  ids.forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    ['input','change','blur'].forEach(ev=>el.addEventListener(ev, ()=>{ 
+      try{ safeRecalc('edit '+id); }catch(_){ calcular(); }
+    }));
+  });
+})();
+
+
+// ===== Recalc/Highlight robusto =====
+function safeRecalc(where){
+  try{
+    try{ computeDeprForPrinter(); }catch(e){}
+    try{ highlightFilamento(); }catch(e){}
+    try{ highlightImpressora(); }catch(e){}
+    try{ calcular(); }catch(e){ console.error('calcular() erro', e); }
+    try{
+      const totalTxt = document.getElementById('r_total')?.textContent || '';
+      const st=document.getElementById('status'); if(st) st.textContent = (where? where+': ' : '') + 'cálculos atualizados ' + (totalTxt?('— '+totalTxt):'');
+    }catch(e){}
+  }catch(e){
+    const st=document.getElementById('status'); if(st) st.textContent='erro ao recalcular';
+  }
+}
+
+// Observa mudanças programáticas nos campos para destacar botões e recalcular
+(function(){
+  const obsCfg={attributes:true,attributeFilter:['value']};
+  const ob1=new MutationObserver(()=>safeRecalc('obs filamento'));
+  const ob2=new MutationObserver(()=>safeRecalc('obs impressora'));
+  const f=document.getElementById('filamento'), i=document.getElementById('impressora');
+  if(f) ob1.observe(f, obsCfg);
+  if(i) ob2.observe(i, obsCfg);
+})();
+
+
+// ===== Refino de destaque & recálculo =====
+function postHighlight(){
+  try{
+    // Filamento
+    const vfil = (($('filamento').value||'')+'').toUpperCase();
+    let key = '';
+    if(vfil.includes('PLA')) key='PLA';
+    if(vfil.includes('ABS')) key='ABS';
+    if(vfil.includes('PETG') || vfil.includes('PEG')) key='PETG';
+    if(vfil.includes('TRITAN')) key='TRITAN';
+    if(vfil.includes('SILK')) key='SILK';
+    document.querySelectorAll('button[data-fil]').forEach(b=>b.classList.remove('sel'));
+    if(key){ const btn = document.querySelector(`button[data-fil="${key}"]`); if(btn) btn.classList.add('sel'); }
+
+    // Impressora
+    const vimpr = (($('impressora').value||'')+'').toUpperCase();
+    document.querySelectorAll('button[data-prn]').forEach(b=>b.classList.remove('sel'));
+    let bestBtn=null, bestScore=0;
+    document.querySelectorAll('button[data-prn]').forEach(b=>{
+      const k=(b.dataset.prn||'').toUpperCase();
+      let score=0;
+      if(vimpr===k) score=3;
+      else if(vimpr.includes(k) || k.includes(vimpr)) score=2;
+      else if(vimpr && k && (vimpr.split(' ')[0]===k.split(' ')[0])) score=1;
+      if(score>bestScore){ bestScore=score; bestBtn=b; }
+    });
+    if(bestBtn) bestBtn.classList.add('sel');
+  }catch(e){}
+}
+
+function safeRecalc(where){
+  try{
+    try{ computeDeprForPrinter(); }catch(e){}
+    try{ postHighlight(); forceHighlightKeys(); }catch(e){}
+    try{ calcular(); }catch(e){ console.error('calcular() erro', e); }
+    try{
+      const totalTxt = document.getElementById('r_total')?.textContent || '';
+      const st=document.getElementById('status'); if(st) st.textContent = (where? where+': ' : '') + 'cálculos atualizados ' + (totalTxt?('— '+totalTxt):'');
+    }catch(e){}
+  }catch(e){
+    const st=document.getElementById('status'); if(st) st.textContent='erro ao recalcular';
+  }
+}
+
+// Chama uma vez ao carregar
+document.addEventListener('DOMContentLoaded', ()=>{ try{ safeRecalc('ready'); }catch(e){} });
+
+// Mostra erros no status para facilitar debug
+window.addEventListener('error', function(ev){ try{ const st=$('status'); if(st) st.textContent='Erro JS: '+(ev.message||ev.error); }catch(e){} });
+
+
+// ===== Helpers reforçados =====
+function fmtBRL(x){ const n=Number(x); return Number.isFinite(n)? BRL.format(n) : '–'; }
+function forceHighlightKeys(){
+  try{
+    // Filamento
+    const vf = (($('filamento').value||'')+'').toUpperCase();
+    let fk = '';
+    if(vf.includes('PLA')) fk='PLA';
+    if(vf.includes('ABS')) fk='ABS';
+    if(vf.includes('PETG') || vf.includes('PEG')) fk='PETG';
+    if(vf.includes('TRITAN')) fk='TRITAN';
+    if(vf.includes('SILK')) fk='SILK';
+    document.querySelectorAll('button[data-fil]').forEach(b=>b.classList.remove('sel'));
+    if(fk){ const fb=document.querySelector(`button[data-fil="${fk}"]`); if(fb) fb.classList.add('sel'); }
+
+    // Impressora
+    const vi=(($('impressora').value||'')+'').toUpperCase();
+    document.querySelectorAll('button[data-prn]').forEach(b=>b.classList.remove('sel'));
+    let pb=null, score=0;
+    document.querySelectorAll('button[data-prn]').forEach(b=>{
+      const k=(b.dataset.prn||'').toUpperCase();
+      let s=0; if(vi===k) s=3; else if(vi.includes(k) || k.includes(vi)) s=2; else if(vi && k && vi.split(' ')[0]===k.split(' ')[0]) s=1;
+      if(s>score){ score=s; pb=b; }
+    });
+    if(pb) pb.classList.add('sel');
+  }catch(e){}
+}
+
+</script>
+
+<script>
+function bindAuto(){
+  try{
+    const ids=['tempo','peso','nomePeca','filamento','cor','impressora','custoKg','kwh','pot','margem','modTempo','modPreco','depr',
+      'dep_v0goku_val','dep_v0goku_up','dep_v0bage_val','dep_v0bage_up','dep_sp5_val','dep_sp5_up','dep_k1_val','dep_k1_up','dep_vida_padrao'];
+    ids.forEach(id=>{
+      const el=document.getElementById(id); if(!el) return;
+      ['input','change'].forEach(ev=>el.addEventListener(ev, ()=>{ inlineRenderNow(); }));
+    });
+  }catch(e){}
+}
+document.addEventListener('DOMContentLoaded', bindAuto);
+</script>
+
+
+<script>
+function buildWhatsText(){
+  // Pequeno parser independente (não mexe no resto)
+  const $=id=>document.getElementById(id);
+  const BRL=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+  const parseHM=(s)=>{ if(!s) return 0; s=String(s).trim();
+    let m=s.match(/^([0-9]+):([0-9]{1,2})$/); if(m) return (+m[1])+(+m[2])/60;
+    m=s.match(/(?:(\d+(?:[.,]\d+)?)\s*h)?\s*(?:(\d+)\s*m(?:in)?)?/i); if(m&&(m[1]||m[2])) return (parseFloat((m[1]||'0').replace(',','.'))||0)+((+m[2]||0)/60);
+    return 0; };
+  const nome=$('nomePeca')?.value?.trim()||'';
+  const cliente=$('nomeCliente')?.value?.trim()||'Cliente';
+  const filamento=($('filamento')?.value?.trim()||'') + ( ($('cor')?.value?.trim())?(' – '+$('cor').value.trim()):'' );
+  const impressora=$('impressora')?.value?.trim()||'';
+  const h=parseHM($('tempo')?.value||'');
+  const peso=parseFloat((($('peso')?.value||'')+'').replace(',','.'))||0;
+  const modH=parseHM($('modTempo')?.value||'0');
+  const modPreco=parseFloat($('modPreco')?.value||0)||0;
+  const totalTxt=(document.getElementById('r_total')?.textContent)||'R$ 0,00';
+  const hh=Math.floor(h), mm=Math.round((h-hh)*60);
+  const mh=Math.floor(modH), mmh=Math.round((modH-mh)*60);
+  const obs=($('obs')?.value||'').trim();
 
   const linhas=[];
-  linhas.push(`*Orçamento de Impressão 3D*`);
-  linhas.push(`*Valor do serviço:* ${fmtBRL(total)}`);
-  if (nomePeca) linhas.push(`*Peça:* ${nomePeca}`);
-  if (cliente) linhas.push(`*Cliente:* ${cliente}`);
-  if (filSel) linhas.push(`*Filamento:* ${filSel}${cor? ' - '+cor:''}`);
-  if (imps.length) linhas.push(`*Impressora:* ${imps.join(', ')}`);
-  if (tempoH>0){
-    const hh = Math.floor(tempoH||0);
-    const mm = Math.round(((tempoH||0)-hh)*60);
-    if(hh > 0){ linhas.push(`*Tempo:* ${hh}h ${mm}min (estimado)`); } else { linhas.push(`*Tempo:* ${mm}min (estimado)`); }
-  }
-  if (peso>0) linhas.push(`*Peso:* ${peso.toFixed(1)} g`);
-  // Sempre incluir modelagem
-  {
-    const mh = Math.floor(modTempo||0);
-    const mmh = Math.round(((modTempo||0)-mh)*60);
-    if(mh > 0){ linhas.push(`*Tempo de modelagem:* ${mh}h ${mmh}min`); } else { linhas.push(`*Tempo de modelagem:* ${mmh}min`); }
-    linhas.push(`*Valor modelagem:* ${fmtBRL(model)}`);
-  }
-  if (obs) linhas.push(`Obs.: ${obs}`);
-  linhas.push(`Agradecemos a preferência! 😊`);
-  linhas.push('');
-  linhas.push(`Siga nosso Instagram: https://www.instagram.com/gfbarreto3d/`);
-  const msgEl = $('msg'); if(msgEl) msgEl.value = linhas.join('\n');
-
-  return total;
+  linhas.push('*Orçamento de Impressão 3D*');
+  linhas.push(`*Cliente:* ${cliente}`);
+  if(nome) linhas.push(`*Peça:* ${nome}`);
+  if(filamento) linhas.push(`*Filamento:* ${filamento}`);
+  if(impressora) linhas.push(`*Impressora:* ${impressora}`);
+  linhas.push(`*Tempo:* ${hh}h ${mm}min (estimado)`);
+  if(peso) linhas.push(`*Peso:* ${peso.toFixed(1)} g`);
+  linhas.push(`*R$/h modelagem:* ${BRL.format(modPreco)} | *Tempo modelagem:* ${mh}h ${mmh}min`);
+  linhas.push(`*Valor do serviço:* ${totalTxt}`);
+  if(obs) linhas.push(`Obs.: ${obs}`);
+  linhas.push('', 'Agradecemos a preferência!');
+  const txt=linhas.join('\n');
+  const msg=$('msg'); if(msg) msg.value=txt;
+  return txt;
 }
-
-// eventos
-$('btnCalc').addEventListener('click', calcular);
-document.querySelectorAll('[data-m]').forEach(b=> b.addEventListener('click', ()=>{ $('margem').value=b.getAttribute('data-m'); calcular(); }));
-$('btnZap').addEventListener('click', ()=>{
-  calcular();
-  const f = ($('fone').value||'').replace(/\D/g,'');
-  if(!f){ alert('Informe o Whats (apenas números)'); return; }
-  const msg = encodeURIComponent(($('msg').value||''));
-  window.open('https://wa.me/55'+f+'?text='+msg, '_blank');
-});
-$('btnCopyThumb').addEventListener('click', async ()=>{
-  try{
-    if(!lastThumb) throw 0;
-    const resp = await fetch(lastThumb); const blob = await resp.blob();
-    await navigator.clipboard.write([new ClipboardItem({[blob.type]: blob})]);
-    alert('Miniatura copiada! Cole no Whats.');
-  }catch(e){ alert('Miniatura indisponível. Baixe e anexe manualmente.'); }
-});
-
-// importar gcode
-function loadFile(){
-  const f = $('file').files && $('file').files[0];
-  if(!f){ alert('Selecione um .gcode'); return; }
-  if(!$('nomePeca').value) $('nomePeca').value = reducedName(f.name);
-  const r = new FileReader();
-  r.onload = ev => {
-    // Parse filename hints (filament, printer, color)
-    const meta = parseFromFilename(f.name);
-    if(meta.fil){
-      const el = document.getElementById('f_'+meta.fil.toUpperCase());
-      if(el){ el.checked = true; }
-    }
-    const mapping = {goku:'p_goku', bage:'p_bage', sp5:'p_sp5', k1:'p_k1'};
-    (meta.printer||[]).forEach(key=>{ const el=document.getElementById(mapping[key]); if(el) el.checked=true; });
-    if(meta.color && !$('cor').value){ $('cor').value = meta.color.charAt(0).toUpperCase()+meta.color.slice(1); }
-
-    const tx = String(ev.target.result||'');
-    const p = parseG(tx);
-    if(p.hours!=null) $('tempo').value = horasTxt(p.hours);
-    if(p.weight!=null) $('peso').value = p.weight.toFixed(1);
-    $('status').textContent = 'Importado.';
-    if(window.__thumbWH){ $('status').textContent += ` (Thumb ${window.__thumbWH})`; }
-    calcular(); // calcula automaticamente ao importar
-  };
-  r.onerror = ()=> $('status').textContent='Falha ao ler.';
-  r.readAsText(f);
-}
-$('btnLoad').addEventListener('click', loadFile);
-$('file').addEventListener('change', loadFile);
-
-// ao carregar a página: garante custoKg padrão se vazio
-document.addEventListener('DOMContentLoaded', ()=>{
-  const ck = $('custoKg');
-  if(ck && !ck.value) ck.value = 120;
-});
 </script>
+
+
+<script>
+window._setMargem = function(v, btn){
+  try{
+    var mg = document.getElementById('margem');
+    if(mg) mg.value = String(v);
+    if(btn && btn.parentElement){
+      try{
+        btn.parentElement.querySelectorAll('button').forEach(function(b){ b.classList.remove('sel'); });
+        btn.classList.add('sel');
+      }catch(e){}
+    }
+    if(typeof inlineRenderNow === 'function') inlineRenderNow(); else if(typeof calcular === 'function') calcular();
+  }catch(e){}
+};
+</script>
+
+</head>
+<body>
+<div class="wrap">
+  <h1>Orçamento de Impressão 3D</h1>
+
+  <!-- Importar G-code -->
+  <div class="panel" id="importPanel">
+    <div class="row">
+      <div class="col">
+        <label for="file">Importar G-code</label>
+        <input id="file" type="file" accept=".gcode,.gco,.g" onchange="(function(el, droppedFile){var st=document.getElementById('status'); if(st) st.textContent='Lendo arquivo (inline)…';try{ var f=droppedFile || (el && el.files && el.files[0]); if(!f){ if(st) st.textContent='Selecione um arquivo primeiro.'; return; }var r=new FileReader();r.onload=function(ev){ try{ var tx=String(ev.target.result||''); if(window.parseG && window.populateFromParsed){ var p=parseG(tx); populateFromParsed(p, f.name||''); } else {  var weight=null,hours=null,thumb=null;  try{ var m=tx.match(/estimated\s+printing\s+time[^\n=]*=\s*([^\r\n]+)/i); if(m){ var v=m[1]; var mm=v.match(/(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?\s*(?:(\d+)\s*s)?/i)||v.match(/(\d+)h(\d{1,2})m(\d{1,2})s/i); if(mm){ hours=(+mm[1]||0)+((+mm[2]||0)/60)+((+mm[3]||0)/3600);} } }catch(_){ }  try{ var lastW=null; tx.replace(/filament\s+(?:total\s+)?used\s*\[?\s*g\s*\]?\s*[:=]\s*([\d.,]+)/ig,function(_,$1){ lastW=$1; return _;}); if(lastW){ var w=parseFloat(String(lastW).replace(',','.')); if(isFinite(w)) weight=w; } }catch(_){ }  try{ var lines=tx.split(/\r?\n/),i=0,c=[]; while(i<lines.length){ var b=lines[i].match(/^\s*;\s*thumbnail begin\s+(\d+)x(\d+)\s+(\d+)/i); if(b){ var j=i+1,parts=[]; while(j<lines.length && !/^\s*;\s*thumbnail end/i.test(lines[j])){ parts.push(lines[j].replace(/^\s*;\s*/,'')); j++; } if(j<lines.length){ c.push({w:+b[1],h:+b[2],body:parts.join('')}); i=j;} } i++; } if(c.length){ c.sort(function(a,b){return(b.w*b.h)-(a.w*a.h);}); var pick=c[0]; if(pick.body && pick.body.length>100){ thumb='data:image/png;base64,'+pick.body; } } }catch(_){ }  if(hours!=null){ var H=Math.floor(hours), M=Math.round((hours-H)*60); var t=document.getElementById('tempo'); if(t) t.value=String(H)+':'+String(M).padStart(2,'0'); }  if(weight!=null){ var p=document.getElementById('peso'); if(p) p.value=(Math.round(weight*10)/10).toFixed(1); }  if(thumb){ var top=document.getElementById('thumbTop'); if(top){ var img=new Image(); img.src=thumb; top.innerHTML=''; top.appendChild(img); } }  var fname=document.getElementById('fname'); if(fname) fname.textContent=f.name||''; var tEl=document.getElementById('tempo'); var pEl=document.getElementById('peso'); var pe=document.getElementById('nomePeca'); var fe=document.getElementById('filamento'); var ce=document.getElementById('cor'); var ip=document.getElementById('impressora'); _fire(tEl); _fire(pEl); _fire(pe); _fire(fe); _fire(ce); _fire(ip);  try{ if(window.computeDeprForPrinter) computeDeprForPrinter(); if(window.highlightFilamento) highlightFilamento(); if(window.highlightImpressora) highlightImpressora(); if(window.calcular) calcular(); }catch(e){} inlineRenderNow(); try{ forceHighlightKeys(); computeDeprForPrinter(); calcular(); }catch(e){} try{ var name=f.name||''; var base=name.replace(/\.gcode$/i,''); var idxU=base.indexOf('_'); var idxD=base.indexOf(' - '); var cut=idxU>0?base.slice(0,idxU):(idxD>0?base.slice(0,idxD):base); var pe=document.getElementById('nomePeca'); if(pe&&!pe.value.trim()) pe.value=cut; var up=name.toUpperCase(); var types=['PLA HT','PLA','ABS','PETG','TRITAN','SILK','TPU','ASA','NYLON','PS','PEG']; var tipo=''; for(var t=0;t<types.length;t++){ if(up.indexOf(types[t])>=0){ tipo=types[t]; break; } } var color=''; var cmap=[['PRETO','Preto'],['BRANCO','Branco'],['NATURAL','Natural'],['CINZA','Cinza'],['AZUL','Azul'],['VERMELHO','Vermelho'],['VERDE','Verde'],['AMARELO','Amarelo'],['PRATA','Prata'],['DOURADO','Dourado'],['OURO','Dourado'],['SILK','Silk']]; for(var c=0;c<cmap.length;c++){ if(up.indexOf(cmap[c][0])>=0){ color=cmap[c][1]; break; } } var fe=document.getElementById('filamento'); if(fe && tipo) fe.value=tipo; var ce=document.getElementById('cor'); if(ce && color) ce.value=color; var imp=''; if(/SP-?5|TWOTREES|TT\s*SP-?5/i.test(name)) imp='SP5'; else if(/\bK1\b/i.test(name)) imp='Creality K1'; else if(/GOKU/i.test(name)) imp='V.0 Goku'; else if(/BUMBLEBEE/i.test(name)) imp='V.0 Bumblebee'; else if(/V(?:\.|)0/i.test(name)||/VORON\s*0/i.test(name)) imp='V.0 Goku'; var ip=document.getElementById('impressora'); if(ip && imp) ip.value=imp; if(window.highlightFilamento) try{ window.highlightFilamento(); }catch(_){ } if(window.highlightImpressora) try{ window.highlightImpressora(); }catch(_){ } }catch(_){ } } if(st) st.textContent='G-code importado.'; try{ if(window.computeDeprForPrinter) computeDeprForPrinter(); if(window.highlightFilamento) highlightFilamento(); if(window.highlightImpressora) highlightImpressora(); if(window.calcular) calcular(); }catch(_){ }}catch(err){ if(st) st.textContent='Falha ao processar: '+err; } };r.onerror=function(){ if(st) st.textContent='Falha ao ler o arquivo.'; };r.readAsText(f);}catch(e){ if(st) st.textContent='Erro: '+e; }})(this)" oninput="(function(el, droppedFile){var st=document.getElementById('status'); if(st) st.textContent='Lendo arquivo (inline)…';try{ var f=droppedFile || (el && el.files && el.files[0]); if(!f){ if(st) st.textContent='Selecione um arquivo primeiro.'; return; }var r=new FileReader();r.onload=function(ev){ try{ var tx=String(ev.target.result||''); if(window.parseG && window.populateFromParsed){ var p=parseG(tx); populateFromParsed(p, f.name||''); } else {  var weight=null,hours=null,thumb=null;  try{ var m=tx.match(/estimated\s+printing\s+time[^\n=]*=\s*([^\r\n]+)/i); if(m){ var v=m[1]; var mm=v.match(/(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?\s*(?:(\d+)\s*s)?/i)||v.match(/(\d+)h(\d{1,2})m(\d{1,2})s/i); if(mm){ hours=(+mm[1]||0)+((+mm[2]||0)/60)+((+mm[3]||0)/3600);} } }catch(_){ }  try{ var lastW=null; tx.replace(/filament\s+(?:total\s+)?used\s*\[?\s*g\s*\]?\s*[:=]\s*([\d.,]+)/ig,function(_,$1){ lastW=$1; return _;}); if(lastW){ var w=parseFloat(String(lastW).replace(',','.')); if(isFinite(w)) weight=w; } }catch(_){ }  try{ var lines=tx.split(/\r?\n/),i=0,c=[]; while(i<lines.length){ var b=lines[i].match(/^\s*;\s*thumbnail begin\s+(\d+)x(\d+)\s+(\d+)/i); if(b){ var j=i+1,parts=[]; while(j<lines.length && !/^\s*;\s*thumbnail end/i.test(lines[j])){ parts.push(lines[j].replace(/^\s*;\s*/,'')); j++; } if(j<lines.length){ c.push({w:+b[1],h:+b[2],body:parts.join('')}); i=j;} } i++; } if(c.length){ c.sort(function(a,b){return(b.w*b.h)-(a.w*a.h);}); var pick=c[0]; if(pick.body && pick.body.length>100){ thumb='data:image/png;base64,'+pick.body; } } }catch(_){ }  if(hours!=null){ var H=Math.floor(hours), M=Math.round((hours-H)*60); var t=document.getElementById('tempo'); if(t) t.value=String(H)+':'+String(M).padStart(2,'0'); }  if(weight!=null){ var p=document.getElementById('peso'); if(p) p.value=(Math.round(weight*10)/10).toFixed(1); }  if(thumb){ var top=document.getElementById('thumbTop'); if(top){ var img=new Image(); img.src=thumb; top.innerHTML=''; top.appendChild(img); } }  var fname=document.getElementById('fname'); if(fname) fname.textContent=f.name||''; var tEl=document.getElementById('tempo'); var pEl=document.getElementById('peso'); var pe=document.getElementById('nomePeca'); var fe=document.getElementById('filamento'); var ce=document.getElementById('cor'); var ip=document.getElementById('impressora'); _fire(tEl); _fire(pEl); _fire(pe); _fire(fe); _fire(ce); _fire(ip);  try{ if(window.computeDeprForPrinter) computeDeprForPrinter(); if(window.highlightFilamento) highlightFilamento(); if(window.highlightImpressora) highlightImpressora(); if(window.calcular) calcular(); }catch(e){} inlineRenderNow(); try{ forceHighlightKeys(); computeDeprForPrinter(); calcular(); }catch(e){} try{ var name=f.name||''; var base=name.replace(/\.gcode$/i,''); var idxU=base.indexOf('_'); var idxD=base.indexOf(' - '); var cut=idxU>0?base.slice(0,idxU):(idxD>0?base.slice(0,idxD):base); var pe=document.getElementById('nomePeca'); if(pe&&!pe.value.trim()) pe.value=cut; var up=name.toUpperCase(); var types=['PLA HT','PLA','ABS','PETG','TRITAN','SILK','TPU','ASA','NYLON','PS','PEG']; var tipo=''; for(var t=0;t<types.length;t++){ if(up.indexOf(types[t])>=0){ tipo=types[t]; break; } } var color=''; var cmap=[['PRETO','Preto'],['BRANCO','Branco'],['NATURAL','Natural'],['CINZA','Cinza'],['AZUL','Azul'],['VERMELHO','Vermelho'],['VERDE','Verde'],['AMARELO','Amarelo'],['PRATA','Prata'],['DOURADO','Dourado'],['OURO','Dourado'],['SILK','Silk']]; for(var c=0;c<cmap.length;c++){ if(up.indexOf(cmap[c][0])>=0){ color=cmap[c][1]; break; } } var fe=document.getElementById('filamento'); if(fe && tipo) fe.value=tipo; var ce=document.getElementById('cor'); if(ce && color) ce.value=color; var imp=''; if(/SP-?5|TWOTREES|TT\s*SP-?5/i.test(name)) imp='SP5'; else if(/\bK1\b/i.test(name)) imp='Creality K1'; else if(/GOKU/i.test(name)) imp='V.0 Goku'; else if(/BUMBLEBEE/i.test(name)) imp='V.0 Bumblebee'; else if(/V(?:\.|)0/i.test(name)||/VORON\s*0/i.test(name)) imp='V.0 Goku'; var ip=document.getElementById('impressora'); if(ip && imp) ip.value=imp; if(window.highlightFilamento) try{ window.highlightFilamento(); }catch(_){ } if(window.highlightImpressora) try{ window.highlightImpressora(); }catch(_){ } }catch(_){ } } if(st) st.textContent='G-code importado.'; try{ if(window.computeDeprForPrinter) computeDeprForPrinter(); if(window.highlightFilamento) highlightFilamento(); if(window.highlightImpressora) highlightImpressora(); if(window.calcular) calcular(); }catch(_){ }}catch(err){ if(st) st.textContent='Falha ao processar: '+err; } };r.onerror=function(){ if(st) st.textContent='Falha ao ler o arquivo.'; };r.readAsText(f);}catch(e){ if(st) st.textContent='Erro: '+e; }})(this)">
+        <div class="row mt8"><button class="btn btn2" type="button" onclick="(function(){var el=document.getElementById('file'); (function(el, droppedFile){var st=document.getElementById('status'); if(st) st.textContent='Lendo arquivo (inline)…';try{ var f=droppedFile || (el && el.files && el.files[0]); if(!f){ if(st) st.textContent='Selecione um arquivo primeiro.'; return; }var r=new FileReader();r.onload=function(ev){ try{ var tx=String(ev.target.result||''); if(window.parseG && window.populateFromParsed){ var p=parseG(tx); populateFromParsed(p, f.name||''); } else {  var weight=null,hours=null,thumb=null;  try{ var m=tx.match(/estimated\s+printing\s+time[^\n=]*=\s*([^\r\n]+)/i); if(m){ var v=m[1]; var mm=v.match(/(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?\s*(?:(\d+)\s*s)?/i)||v.match(/(\d+)h(\d{1,2})m(\d{1,2})s/i); if(mm){ hours=(+mm[1]||0)+((+mm[2]||0)/60)+((+mm[3]||0)/3600);} } }catch(_){ }  try{ var lastW=null; tx.replace(/filament\s+(?:total\s+)?used\s*\[?\s*g\s*\]?\s*[:=]\s*([\d.,]+)/ig,function(_,$1){ lastW=$1; return _;}); if(lastW){ var w=parseFloat(String(lastW).replace(',','.')); if(isFinite(w)) weight=w; } }catch(_){ }  try{ var lines=tx.split(/\r?\n/),i=0,c=[]; while(i<lines.length){ var b=lines[i].match(/^\s*;\s*thumbnail begin\s+(\d+)x(\d+)\s+(\d+)/i); if(b){ var j=i+1,parts=[]; while(j<lines.length && !/^\s*;\s*thumbnail end/i.test(lines[j])){ parts.push(lines[j].replace(/^\s*;\s*/,'')); j++; } if(j<lines.length){ c.push({w:+b[1],h:+b[2],body:parts.join('')}); i=j;} } i++; } if(c.length){ c.sort(function(a,b){return(b.w*b.h)-(a.w*a.h);}); var pick=c[0]; if(pick.body && pick.body.length>100){ thumb='data:image/png;base64,'+pick.body; } } }catch(_){ }  if(hours!=null){ var H=Math.floor(hours), M=Math.round((hours-H)*60); var t=document.getElementById('tempo'); if(t) t.value=String(H)+':'+String(M).padStart(2,'0'); }  if(weight!=null){ var p=document.getElementById('peso'); if(p) p.value=(Math.round(weight*10)/10).toFixed(1); }  if(thumb){ var top=document.getElementById('thumbTop'); if(top){ var img=new Image(); img.src=thumb; top.innerHTML=''; top.appendChild(img); } }  var fname=document.getElementById('fname'); if(fname) fname.textContent=f.name||''; var tEl=document.getElementById('tempo'); var pEl=document.getElementById('peso'); var pe=document.getElementById('nomePeca'); var fe=document.getElementById('filamento'); var ce=document.getElementById('cor'); var ip=document.getElementById('impressora'); _fire(tEl); _fire(pEl); _fire(pe); _fire(fe); _fire(ce); _fire(ip);  try{ if(window.computeDeprForPrinter) computeDeprForPrinter(); if(window.highlightFilamento) highlightFilamento(); if(window.highlightImpressora) highlightImpressora(); if(window.calcular) calcular(); }catch(e){} inlineRenderNow(); try{ forceHighlightKeys(); computeDeprForPrinter(); calcular(); }catch(e){} try{ var name=f.name||''; var base=name.replace(/\.gcode$/i,''); var idxU=base.indexOf('_'); var idxD=base.indexOf(' - '); var cut=idxU>0?base.slice(0,idxU):(idxD>0?base.slice(0,idxD):base); var pe=document.getElementById('nomePeca'); if(pe&&!pe.value.trim()) pe.value=cut; var up=name.toUpperCase(); var types=['PLA HT','PLA','ABS','PETG','TRITAN','SILK','TPU','ASA','NYLON','PS','PEG']; var tipo=''; for(var t=0;t<types.length;t++){ if(up.indexOf(types[t])>=0){ tipo=types[t]; break; } } var color=''; var cmap=[['PRETO','Preto'],['BRANCO','Branco'],['NATURAL','Natural'],['CINZA','Cinza'],['AZUL','Azul'],['VERMELHO','Vermelho'],['VERDE','Verde'],['AMARELO','Amarelo'],['PRATA','Prata'],['DOURADO','Dourado'],['OURO','Dourado'],['SILK','Silk']]; for(var c=0;c<cmap.length;c++){ if(up.indexOf(cmap[c][0])>=0){ color=cmap[c][1]; break; } } var fe=document.getElementById('filamento'); if(fe && tipo) fe.value=tipo; var ce=document.getElementById('cor'); if(ce && color) ce.value=color; var imp=''; if(/SP-?5|TWOTREES|TT\s*SP-?5/i.test(name)) imp='SP5'; else if(/\bK1\b/i.test(name)) imp='Creality K1'; else if(/GOKU/i.test(name)) imp='V.0 Goku'; else if(/BUMBLEBEE/i.test(name)) imp='V.0 Bumblebee'; else if(/V(?:\.|)0/i.test(name)||/VORON\s*0/i.test(name)) imp='V.0 Goku'; var ip=document.getElementById('impressora'); if(ip && imp) ip.value=imp; if(window.highlightFilamento) try{ window.highlightFilamento(); }catch(_){ } if(window.highlightImpressora) try{ window.highlightImpressora(); }catch(_){ } }catch(_){ } } if(st) st.textContent='G-code importado.'; try{ if(window.computeDeprForPrinter) computeDeprForPrinter(); if(window.highlightFilamento) highlightFilamento(); if(window.highlightImpressora) highlightImpressora(); if(window.calcular) calcular(); }catch(_){ }}catch(err){ if(st) st.textContent='Falha ao processar: '+err; } };r.onerror=function(){ if(st) st.textContent='Falha ao ler o arquivo.'; };r.readAsText(f);}catch(e){ if(st) st.textContent='Erro: '+e; }})(el);})()">Importar arquivo</button></div>
+        <div id="status" class="muted mt8">Nenhum arquivo importado. Clique aqui ou arraste o .gcode para este painel.</div>
+        <div class="muted mt8" id="fname"></div>
+      </div>
+      <div class="col">
+        <label>Miniatura (preferência 300×300)</label>
+        <div class="thumb" id="thumbTop">Sem miniatura</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid mt16">
+    <!-- Coluna esquerda -->
+    <div class="panel">
+      <div class="row">
+        <div class="col"><label for="nomePeca">Nome da peça</label><input id="nomePeca" type="text" placeholder="Ex.: PortaBrocas"></div>
+        <div class="col"><label for="nomeCliente">Cliente</label><input id="nomeCliente" type="text" placeholder="Ex.: João"></div>
+      </div>
+      <div class="row mt12">
+        <div class="col"><label for="foneCliente">Telefone (WhatsApp)</label><input id="foneCliente" type="text" value="55" placeholder="ex.: 5599999999999"></div>
+      </div>
+
+      <div class="row mt12">
+        <div class="col">
+          <label for="filamento">Filamento</label>
+          <input id="filamento" type="text" list="filamentos" placeholder="Ex.: PETG">
+          <datalist id="filamentos">
+            <option value="PLA"></option><option value="PLA HT"></option><option value="PETG"></option><option value="ABS"></option>
+            <option value="TPU"></option><option value="Tritan"></option><option value="ASA"></option><option value="Nylon"></option>
+            <option value="PS"></option><option value="SILK"></option>
+          </datalist>
+          <div class="row mt8">
+            <div class="col">
+              <label for="cor">Cor do filamento</label>
+              <input id="cor" type="text" list="cores" placeholder="Ex.: Preto">
+              <datalist id="cores">
+                <option value="Preto"></option><option value="Branco"></option><option value="Natural"></option><option value="Cinza"></option>
+                <option value="Azul"></option><option value="Vermelho"></option><option value="Verde"></option><option value="Amarelo"></option>
+                <option value="Prata"></option><option value="Dourado"></option><option value="Silk"></option>
+              </datalist>
+            </div>
+          </div>
+          <div class="row mt8">
+            <button class="btn btn2" type="button" data-fil="PLA" onclick="document.getElementById('filamento').value='PLA'; inlineRenderNow();">PLA</button>
+            <button class="btn btn2" type="button" data-fil="ABS" onclick="document.getElementById('filamento').value='ABS'; inlineRenderNow();">ABS</button>
+            <button class="btn btn2" type="button" data-fil="PETG" onclick="document.getElementById('filamento').value='PETG'; inlineRenderNow();">PETG</button>
+            <button class="btn btn2" type="button" data-fil="TRITAN" onclick="document.getElementById('filamento').value='TRITAN'; inlineRenderNow();">TRITAN</button>
+            <button class="btn btn2" type="button" data-fil="SILK" onclick="document.getElementById('filamento').value='SILK'; inlineRenderNow();">SILK</button>
+          </div>
+        </div>
+        <div class="col">
+          <label for="impressora">Impressora</label>
+          <input id="impressora" type="text" placeholder="Ex.: SP5" list="impressoras">
+          <datalist id="impressoras">
+            <option value="SP5"></option><option value="V.0 Goku"></option><option value="V.0 Bumblebee"></option><option value="Creality K1"></option>
+            <option value="Voron 0.2"></option><option value="Voron 2.4"></option><option value="Prusa MK4"></option>
+          </datalist>
+          <div class="row mt8">
+            <button class="btn btn2" type="button" data-prn="SP5" onclick="document.getElementById('impressora').value='SP5'; inlineRenderNow();">SP5</button>
+            <button class="btn btn2" type="button" data-prn="V.0 Goku" onclick="document.getElementById('impressora').value='V.0 Goku'; inlineRenderNow();">V.0 Goku</button>
+            <button class="btn btn2" type="button" data-prn="V.0 Bumblebee" onclick="document.getElementById('impressora').value='V.0 Bumblebee'; inlineRenderNow();">V.0 Bumblebee</button>
+            <button class="btn btn2" type="button" data-prn="Creality K1" onclick="document.getElementById('impressora').value='Creality K1'; inlineRenderNow();">Creality K1</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2 mt12">
+        <div><label for="tempo">Tempo (h:mm)</label><input id="tempo" type="text" placeholder="ex.: 3:35"></div>
+        <div><label for="peso">Peso (g)</label><input id="peso" type="number" step="0.1" placeholder="ex.: 114.3"></div>
+        <div><label for="custoKg">Custo do filamento (R$/kg)</label><input id="custoKg" type="number" step="0.01" value="120"></div>
+        <div><label for="kwh">R$/kWh</label><input id="kwh" type="number" step="0.01" value="1.40"></div>
+        <div><label for="pot">Potência média (kW)</label><input id="pot" type="number" step="0.01" value="0.35"></div>
+        <div>
+          <label for="margem">% Margem</label>
+          <div class="row">
+            <input id="margem" type="number" step="1" value="100" style="flex:0 0 120px">
+            <button class="btn btn2" type="button" onclick="_setMargem(30, this)">30%</button>
+            <button class="btn btn2" type="button" onclick="_setMargem(50, this)">50%</button>
+            <button class="btn btn2" type="button" onclick="_setMargem(80, this)">80%</button>
+            <button class="btn"     type="button" onclick="_setMargem(100, this)">100%</button>
+            <button class="btn btn2" type="button" onclick="_setMargem(150, this)">150%</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2 mt12">
+        <div><label for="modTempo">Tempo modelagem (h:mm)</label><input id="modTempo" type="text" inputmode="text" placeholder="ex.: 1:00"></div>
+        <div><label for="modPreco">R$/h modelagem</label><input id="modPreco" type="number" step="0.01" placeholder="ex.: 50"></div>
+      </div>
+
+      <div class="grid-2 mt12">
+        <div><label for="depr">Depreciação (R$/h)</label><input id="depr" type="number" step="0.01" value="0"></div>
+      </div>
+
+      <div class="panel mt12" style="padding:12px;">
+        <h3 style="margin:0 0 10px;">Depreciação das impressoras</h3>
+        <div class="muted">Valores editáveis. Vida útil (horas) = total de horas até reposição.</div>
+        <div class="grid-2 mt12">
+          <div><label>V.0 Goku — Valor (R$)</label><input id="dep_v0goku_val" type="number" step="1" value="2300"></div>
+          <div><label>V.0 Goku — Upgrades (R$)</label><input id="dep_v0goku_up" type="number" step="1" value="700"></div>
+          <div><label>V.0 Bagé — Valor (R$)</label><input id="dep_v0bage_val" type="number" step="1" value="2300"></div>
+          <div><label>V.0 Bagé — Upgrades (R$)</label><input id="dep_v0bage_up" type="number" step="1" value="1400"></div>
+          <div><label>SP5 — Valor (R$)</label><input id="dep_sp5_val" type="number" step="1" value="1400"></div>
+          <div><label>SP5 — Upgrades (R$)</label><input id="dep_sp5_up" type="number" step="1" value="2600"></div>
+          <div><label>K1 — Valor (R$)</label><input id="dep_k1_val" type="number" step="1" value="3750"></div>
+          <div><label>K1 — Upgrades (R$)</label><input id="dep_k1_up" type="number" step="1" value="850"></div>
+          <div><label>Vida útil (horas) — padrão</label><input id="dep_vida_padrao" type="number" step="1" value="2600"><div class="muted">Ex.: 2 anos × 25 h/sem × 52 = 2600 h.</div></div>
+        </div>
+      </div>
+      <div class="row mt16">
+        <button class="btn" type="button" onclick="calcular()">Calcular</button>
+        <button class="btn btn2" type="button" onclick="copyMsg()">Copiar mensagem do Whats</button>
+        <button class="btn btn2" type="button" onclick="copyThumb()">Copiar miniatura</button>
+        <button class="btn" type="button" onclick="openWhats()">Abrir no WhatsApp</button>
+        <span class="badge" id="badgeInfo">pronto</span>
+      </div>
+    </div>
+
+    <!-- Coluna direita -->
+    <div class="panel">
+      <div class="kv"><span>Peça</span><strong id="r_peca">–</strong></div>
+      <div class="kv"><span>Cliente</span><span id="r_cliente">–</span></div>
+      <div class="kv"><span>Filamento</span><span id="r_filamento">–</span></div>
+      <div class="kv"><span>Impressora</span><span id="r_impressora">–</span></div>
+      <div class="kv"><span>Tempo (h)</span><span id="r_tempo">–</span></div>
+      <div class="kv"><span>Peso (g)</span><span id="r_peso">–</span></div>
+      <div class="kv"><span>Filamento (R$)</span><span id="r_fil_cost" class="money">–</span></div>
+      <div class="kv"><span>Energia (R$)</span><span id="r_energy_cost" class="money">–</span></div>
+      <div class="kv"><span>Modelagem (R$)</span><span id="r_model_cost" class="money">–</span></div>
+      <div class="kv"><span>Depreciação (R$)</span><span id="r_depr_cost" class="money">–</span></div>
+      <div class="kv total"><span>Total do serviço</span><span id="r_total" class="money">–</span></div>
+<div class="mt12"><label for="obs">Observações</label><textarea id="obs" placeholder="Detalhes combinados, prazos, variações, etc."></textarea></div>
+
+      <div class="mt16">
+        <label for="msg">Mensagem do Whats (sem itens de custo)</label>
+        <textarea id="msg" rows="10" readonly></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Drag & drop no painel
+(function(){
+  const panel=document.getElementById('importPanel');
+  panel.addEventListener('click', ()=>document.getElementById('file').click());
+  panel.addEventListener('dragover', e=>{ e.preventDefault(); });
+  panel.addEventListener('drop', e=>{ e.preventDefault(); const dt=e.dataTransfer; let f=null; if(dt&&dt.files&&dt.files.length) f=dt.files[0]; (function(){var el=document.getElementById('file'); (function(el, droppedFile){var st=document.getElementById('status'); if(st) st.textContent='Lendo arquivo (inline)…';try{ var f=droppedFile || (el && el.files && el.files[0]); if(!f){ if(st) st.textContent='Selecione um arquivo primeiro.'; return; }var r=new FileReader();r.onload=function(ev){ try{ var tx=String(ev.target.result||''); if(window.parseG && window.populateFromParsed){ var p=parseG(tx); populateFromParsed(p, f.name||''); } else {  var weight=null,hours=null,thumb=null;  try{ var m=tx.match(/estimated\s+printing\s+time[^\n=]*=\s*([^\r\n]+)/i); if(m){ var v=m[1]; var mm=v.match(/(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?\s*(?:(\d+)\s*s)?/i)||v.match(/(\d+)h(\d{1,2})m(\d{1,2})s/i); if(mm){ hours=(+mm[1]||0)+((+mm[2]||0)/60)+((+mm[3]||0)/3600);} } }catch(_){ }  try{ var lastW=null; tx.replace(/filament\s+(?:total\s+)?used\s*\[?\s*g\s*\]?\s*[:=]\s*([\d.,]+)/ig,function(_,$1){ lastW=$1; return _;}); if(lastW){ var w=parseFloat(String(lastW).replace(',','.')); if(isFinite(w)) weight=w; } }catch(_){ }  try{ var lines=tx.split(/\r?\n/),i=0,c=[]; while(i<lines.length){ var b=lines[i].match(/^\s*;\s*thumbnail begin\s+(\d+)x(\d+)\s+(\d+)/i); if(b){ var j=i+1,parts=[]; while(j<lines.length && !/^\s*;\s*thumbnail end/i.test(lines[j])){ parts.push(lines[j].replace(/^\s*;\s*/,'')); j++; } if(j<lines.length){ c.push({w:+b[1],h:+b[2],body:parts.join('')}); i=j;} } i++; } if(c.length){ c.sort(function(a,b){return(b.w*b.h)-(a.w*a.h);}); var pick=c[0]; if(pick.body && pick.body.length>100){ thumb='data:image/png;base64,'+pick.body; } } }catch(_){ }  if(hours!=null){ var H=Math.floor(hours), M=Math.round((hours-H)*60); var t=document.getElementById('tempo'); if(t) t.value=String(H)+':'+String(M).padStart(2,'0'); }  if(weight!=null){ var p=document.getElementById('peso'); if(p) p.value=(Math.round(weight*10)/10).toFixed(1); }  if(thumb){ var top=document.getElementById('thumbTop'); if(top){ var img=new Image(); img.src=thumb; top.innerHTML=''; top.appendChild(img); } }  var fname=document.getElementById('fname'); if(fname) fname.textContent=f.name||''; var tEl=document.getElementById('tempo'); var pEl=document.getElementById('peso'); var pe=document.getElementById('nomePeca'); var fe=document.getElementById('filamento'); var ce=document.getElementById('cor'); var ip=document.getElementById('impressora'); _fire(tEl); _fire(pEl); _fire(pe); _fire(fe); _fire(ce); _fire(ip);  try{ if(window.computeDeprForPrinter) computeDeprForPrinter(); if(window.highlightFilamento) highlightFilamento(); if(window.highlightImpressora) highlightImpressora(); if(window.calcular) calcular(); }catch(e){} inlineRenderNow(); try{ forceHighlightKeys(); computeDeprForPrinter(); calcular(); }catch(e){} try{ var name=f.name||''; var base=name.replace(/\.gcode$/i,''); var idxU=base.indexOf('_'); var idxD=base.indexOf(' - '); var cut=idxU>0?base.slice(0,idxU):(idxD>0?base.slice(0,idxD):base); var pe=document.getElementById('nomePeca'); if(pe&&!pe.value.trim()) pe.value=cut; var up=name.toUpperCase(); var types=['PLA HT','PLA','ABS','PETG','TRITAN','SILK','TPU','ASA','NYLON','PS','PEG']; var tipo=''; for(var t=0;t<types.length;t++){ if(up.indexOf(types[t])>=0){ tipo=types[t]; break; } } var color=''; var cmap=[['PRETO','Preto'],['BRANCO','Branco'],['NATURAL','Natural'],['CINZA','Cinza'],['AZUL','Azul'],['VERMELHO','Vermelho'],['VERDE','Verde'],['AMARELO','Amarelo'],['PRATA','Prata'],['DOURADO','Dourado'],['OURO','Dourado'],['SILK','Silk']]; for(var c=0;c<cmap.length;c++){ if(up.indexOf(cmap[c][0])>=0){ color=cmap[c][1]; break; } } var fe=document.getElementById('filamento'); if(fe && tipo) fe.value=tipo; var ce=document.getElementById('cor'); if(ce && color) ce.value=color; var imp=''; if(/SP-?5|TWOTREES|TT\s*SP-?5/i.test(name)) imp='SP5'; else if(/\bK1\b/i.test(name)) imp='Creality K1'; else if(/GOKU/i.test(name)) imp='V.0 Goku'; else if(/BUMBLEBEE/i.test(name)) imp='V.0 Bumblebee'; else if(/V(?:\.|)0/i.test(name)||/VORON\s*0/i.test(name)) imp='V.0 Goku'; var ip=document.getElementById('impressora'); if(ip && imp) ip.value=imp; if(window.highlightFilamento) try{ window.highlightFilamento(); }catch(_){ } if(window.highlightImpressora) try{ window.highlightImpressora(); }catch(_){ } }catch(_){ } } if(st) st.textContent='G-code importado.'; try{ if(window.computeDeprForPrinter) computeDeprForPrinter(); if(window.highlightFilamento) highlightFilamento(); if(window.highlightImpressora) highlightImpressora(); if(window.calcular) calcular(); }catch(_){ }}catch(err){ if(st) st.textContent='Falha ao processar: '+err; } };r.onerror=function(){ if(st) st.textContent='Falha ao ler o arquivo.'; };r.readAsText(f);}catch(e){ if(st) st.textContent='Erro: '+e; }})(el, f);})() });
+  document.getElementById('status').textContent='JS ativo — pronto para importar';
+})();
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+// Delegação mínima e segura: só reage aos seletores explícitos
+(function(){
+  const $=id=>document.getElementById(id);
+
+  function applyPct(btn){
+    const mg=$('margem'); if(mg) mg.value=String(parseFloat(btn.dataset.pct||'0')||0);
+    // destaca apenas botões com data-pct
+    document.querySelectorAll('[data-pct]').forEach(b=>b.classList.remove('sel'));
+    btn.classList.add('sel');
+    try{ if(typeof inlineRenderNow==='function') inlineRenderNow(); }catch(_){}
+  }
+
+  function buildMsg(){
+    try{ if(typeof buildWhatsText==='function') return buildWhatsText(); }catch(_){}
+    return ($('msg')&&$('msg').value)||'';
+  }
+
+  function openWhatsDirect(){
+    const txt=buildMsg();
+    let phone=String(($('foneCliente')||{}).value||'').replace(/\D/g,'');
+    if(phone && !phone.startsWith('55')) phone='55'+phone; if(!phone) phone='55';
+    const url='https://wa.me/'+phone+'?text='+encodeURIComponent(txt);
+    try{ window.location.href=url; }catch(_){}
+  }
+
+  function triggerCopy(){
+    try{ if(typeof copyThumb==='function'){ copyThumb(); return; } }catch(_){}
+    const badge=$('badgeInfo'); if(badge) badge.textContent='falha ao copiar';
+  }
+
+  document.addEventListener('click', function(ev){
+    const t = ev.target;
+
+    // 1) % margem — apenas elementos com data-pct
+    const pctBtn = t.closest && t.closest('[data-pct]');
+    if(pctBtn){
+      ev.preventDefault();
+      applyPct(pctBtn);
+      return;
+    }
+
+    // 2) Whats — apenas #btnWhats ou [data-action="whats"]
+    const wbtn = (t.closest && (t.closest('#btnWhats') || t.closest('[data-action="whats"]')));
+    if(wbtn){
+      ev.preventDefault();
+      openWhatsDirect();
+      return;
+    }
+
+    // 3) Copiar miniatura — apenas #btnCopyThumb ou [data-action="copy-thumb"]
+    const cbtn = (t.closest && (t.closest('#btnCopyThumb') || t.closest('[data-action="copy-thumb"]')));
+    if(cbtn){
+      ev.preventDefault();
+      triggerCopy();
+      return;
+    }
+  }, true);
+})();
+</script>
+
+
+<script>
+// Guard: só deixa openWhats funcionar quando o clique veio do botão certo
+(function(){
+  const $=id=>document.getElementById(id);
+  document.addEventListener('mousedown', function(e){ window._lastClickTarget = e.target; }, true);
+
+  const origOpenWhats = window.openWhats;
+  window.openWhats = function(){
+    try{
+      const t = window._lastClickTarget;
+      const allowed = (window._forceWhats && (Date.now()-window._forceWhats<800)) || (t && (t.closest('#btnWhats') || t.closest('[data-action="whats"]') || t.closest('.whats') || t.closest('[data-whats-bound="1"])')));
+      if(!allowed){
+        // Não é o botão do Whats — ignora completamente
+        const badge = document.getElementById('badgeInfo');
+        if(badge) badge.textContent=''; // silencioso
+        return false;
+      }
+    }catch(_){ /* continua */ }
+
+    try{ if(typeof buildWhatsText==='function') buildWhatsText(); }catch(_){}
+    const txt=(document.getElementById('msg')?.value)||'';
+    let phone=String(document.getElementById('foneCliente')?.value||'').replace(/\D/g,'');
+    if(phone && !phone.startsWith('55')) phone='55'+phone; if(!phone) phone='55';
+    const url='https://wa.me/'+phone+'?text='+encodeURIComponent(txt);
+    try{ window.location.href=url; return true; }catch(_){}
+    try{ const w=window.open(url,'_blank','noopener'); if(!w||w.closed) throw 0; }catch(e){
+      try{ const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove(); }catch(__){}
+    }
+    return true;
+  };
+
+  // Wiring adicional: "Copiar miniatura" por texto/id/data-action
+  function wireCopyByText(){
+    document.querySelectorAll('button, a, [role="button"]').forEach(el=>{
+      if(el._wiredCopyText) return;
+      const label=((el.getAttribute('data-action')||'')+' '+(el.id||'')+' '+(el.textContent||'')).toLowerCase();
+      if(el.matches('#btnCopyThumb, [data-action="copy-thumb"], .copy-thumb') || /copiar\s*miniatura/.test(label)){
+        el._wiredCopyText = true;
+        el.addEventListener('click', function(ev){
+          ev.preventDefault();
+          try{ if(typeof copyThumb==='function') copyThumb(); }catch(_){}
+        }, true);
+      }
+    });
+  }
+  document.addEventListener('DOMContentLoaded', wireCopyByText);
+  wireCopyByText();
+})();
+</script>
+
+
+<script>
+(function(){
+  function markWhatsButton(){
+    try{
+      var btn = document.querySelector('#btnWhats, [data-action="whats"], .whats');
+      if(!btn){
+        var candidates = Array.from(document.querySelectorAll('button, a, [role="button"]'));
+        btn = candidates.find(el => (el.textContent||'').trim().toLowerCase().replace(/\s+/g,' ') === 'whats'
+                                 || (el.textContent||'').trim().toLowerCase().includes('abrir whats')
+                                 || (el.textContent||'').trim().toLowerCase() === 'whatsapp');
+      }
+      if(btn){ btn.setAttribute('data-whats-bound','1'); btn.addEventListener('click', function(ev){ try{ ev.preventDefault(); }catch(e){} try{ window._forceWhats=Date.now(); openWhats(); }catch(e){} }, {capture:true}); }
+    }catch(e){}
+  }
+  if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', markWhatsButton); } else { markWhatsButton(); }
+})();
+</script>
+
+
+<script>
+(function(){
+  function isPctNode(el){
+    if(!el) return false;
+    if(el.hasAttribute && el.hasAttribute('data-pct')) return true;
+    var t = (el.textContent||'').trim().replace(',','.');
+    return /(\d+(?:\.\d+)?)\s*%$/.test(t);
+  }
+  function getPct(el){
+    if(el && el.dataset && el.dataset.pct) return parseFloat(el.dataset.pct)||0;
+    var m=((el.textContent||'')+'').replace(',','.').match(/(\d+(?:\.\d+)?)\s*%/);
+    return m?parseFloat(m[1]):0;
+  }
+  document.addEventListener('click', function(ev){
+    var node = ev.target.closest && ev.target.closest('button, a, [role="button"], .btn, .btn2');
+    if(!node) return;
+    if(isPctNode(node)){
+      ev.preventDefault();
+      try{ var mg=document.getElementById('margem'); if(mg) mg.value=String(getPct(node)); }catch(e){}
+      try{
+        document.querySelectorAll('[data-pct], .pct').forEach(function(b){ b.classList.remove('sel'); });
+        var container = node.parentElement || document;
+        Array.from(container.querySelectorAll('button, a, .btn, .btn2')).forEach(function(b){
+          var txt=(b.textContent||'').trim();
+          if(/%$/.test(txt)) b.classList.remove('sel');
+        });
+        node.classList.add('sel');
+      }catch(e){}
+      try{ if(typeof inlineRenderNow==='function') inlineRenderNow(); }catch(e){}
+    }
+  }, true);
+})();
+</script>
+
+
+<script>
+(function(){
+  function wireCopyMini(){
+    try{
+      document.querySelectorAll('button, a, [role="button"]').forEach(function(el){
+        if(el._copyMiniWired) return;
+        var label = ((el.getAttribute('data-action')||'')+' '+(el.id||'')+' '+(el.textContent||'')).toLowerCase();
+        if(el.matches('#btnCopyThumb, [data-action="copy-thumb"], .copy-thumb') || /copiar\s*miniatura/.test(label)){
+          el._copyMiniWired = true;
+          el.addEventListener('click', function(ev){ try{ ev.preventDefault(); }catch(e){} try{ copyThumb(); }catch(e){} }, {capture:true});
+        }
+      });
+    }catch(e){}
+  }
+  if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', wireCopyMini); } else { wireCopyMini(); }
+})();
+</script>
+
 </body>
 </html>
